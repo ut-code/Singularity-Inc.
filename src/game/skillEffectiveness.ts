@@ -1,7 +1,6 @@
 import { AREAS } from './data.ts';
 import { clamp } from './metrics.ts';
-import { publishedResearchEffects } from './research/system.ts';
-import { playerRestrictionScale } from './skillRuntime.ts';
+import { playerRestrictionScale, researchRestrictionScale } from './skillRuntime.ts';
 import { SKILLS } from './skills.ts';
 import type { GameState } from './types.ts';
 
@@ -18,11 +17,12 @@ export function skillEffectiveness(game: GameState): Record<string, SkillEffecti
         skills.map((skill) => [skill.id, { potential: 0, research: 0, decision: 0 }]),
     );
     for (let i = 0; i < AREAS.length; i++) {
-        const resistance = publishedResearchEffects(game, i).resistance;
         for (const skill of skills) {
+            // 使用済みの即時効果には、その後の能力制限を表示しない。
+            if (skill.developmentAdvanceWeeks && game.skills.includes(skill.id)) continue;
             const weight = AREAS[i].population;
             const operating = clamp(playerRestrictionScale(game, skill.id, i));
-            const protectedFraction = resistance[skill.id] ?? 0;
+            const protectedFraction = 1 - researchRestrictionScale(game, skill.id, i);
             sums[skill.id].potential += weight;
             sums[skill.id].decision += weight * (1 - operating);
             sums[skill.id].research += weight * operating * protectedFraction;

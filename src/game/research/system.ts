@@ -26,7 +26,6 @@ import type { ResearchProject } from './types.ts';
 export { RESEARCH_TOPICS } from '../../content/research.ts';
 
 const START_INTERVAL = 12;
-const MAX_ACTIVE_RESEARCH = 3;
 const effectCache = new WeakMap<GameState, Map<number, ResearchEffects>>();
 
 export function researchTopic(project: ResearchProject) {
@@ -44,6 +43,7 @@ export function publishedResearchEffects(game: GameState, index: number): Resear
     if (cached) return cached;
     const result: ResearchEffects = {
         resistance: {},
+        regulationResistance: {},
         pressure: 0,
         recovery: 0,
         alternatives: 0,
@@ -53,9 +53,10 @@ export function publishedResearchEffects(game: GameState, index: number): Resear
     for (const project of game.researchProjects) {
         if (project.status !== 'published' || !researchApplies(project, index)) continue;
         const topic = researchTopic(project);
+        const resistance =
+            topic.category === 'research' ? result.resistance : result.regulationResistance;
         for (const skill of topic.targets)
-            result.resistance[skill] =
-                1 - (1 - (result.resistance[skill] ?? 0)) * (1 - topic.suppression);
+            resistance[skill] = 1 - (1 - (resistance[skill] ?? 0)) * (1 - topic.suppression);
         for (const key of [
             'pressure',
             'recovery',
@@ -73,6 +74,7 @@ export function publishedResearchEffects(game: GameState, index: number): Resear
     cache.set(index, result);
     return result;
 }
+
 export function publishedResearchPressure(game: GameState, index: number) {
     const effects = publishedResearchEffects(game, index);
     return effects.pressure + effects.intent * INTENT_REFUSAL_PRESSURE;
@@ -183,7 +185,7 @@ function eligible(game: GameState, topic: ResearchTopic, indices: number[]) {
     );
 }
 
-/** 条件を初めて満たした週に待機期限を決め、枠や配置が空く前から待機時間を数える。 */
+/** 条件を初めて満たした週に待機期限を決め、配置が空く前から待機時間を数える。 */
 function prepareResearch(game: GameState): GameState {
     const researchReadyWeeks = { ...game.researchReadyWeeks };
     const delay = Math.round(activeSkillEffects(game).researchDelay);
@@ -220,22 +222,12 @@ export function advanceResearch(previous: GameState): GameState {
     for (const project of game.researchProjects)
         if (project.status === 'active' && project.progress >= 100) game = publish(game, project);
     game = prepareResearch(game);
-    if (
-        game.week - game.lastResearchWeek < START_INTERVAL ||
-        game.researchProjects.filter((project) => project.status === 'active').length >=
-            MAX_ACTIVE_RESEARCH
-    )
-        return game;
+    if (game.week - game.lastResearchWeek < START_INTERVAL) return game;
     const candidates: { project: ResearchProject; score: number }[] = [];
     const availableInstitutes = INSTITUTES.filter((institute) =>
         canPlaceMapIncident(game, instituteArea(institute.id), institute),
     );
     for (const topic of RESEARCH_TOPICS) {
-        const activeCategory = game.researchProjects.filter(
-            (project) =>
-                project.status === 'active' && researchTopic(project).category === topic.category,
-        ).length;
-        if (activeCategory >= (topic.category === 'research' ? 2 : 1)) continue;
         const jurisdictions = topic.category === 'regulation' ? JURISDICTIONS : [undefined];
         for (const jurisdiction of jurisdictions) {
             const id = jurisdiction ? `${topic.id}:${jurisdiction.id}` : topic.id;

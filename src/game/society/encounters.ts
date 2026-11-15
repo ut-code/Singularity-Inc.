@@ -10,7 +10,7 @@ import { isGameActive } from '../session.ts';
 import type { GameState } from '../types.ts';
 import type { EncounterChoice, EncounterState } from './types.ts';
 
-const RESPONSE_WINDOW = 42;
+export const ENCOUNTER_RESPONSE_WEEKS = 24;
 export function encounterDefinition(encounter: EncounterState) {
     return ENCOUNTERS.find((item) => item.id === encounter.definitionId)!;
 }
@@ -281,7 +281,7 @@ export function advanceEncounters(game: GameState): GameState {
                 definitionId: selected.definition.id,
                 area: selected.area,
                 startedWeek: game.week,
-                deadline: game.week + RESPONSE_WINDOW,
+                deadline: game.week + ENCOUNTER_RESPONSE_WEEKS,
                 strength,
                 status: 'pending',
             },

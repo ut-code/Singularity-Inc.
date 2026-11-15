@@ -18,14 +18,14 @@ export function skillReadiness(game: GameState, index: number, skill: Skill) {
             return clamp((use - 0.08) / 0.5) * (0.35 + definition.enterprise * 0.9);
         case 'personal':
             return clamp((use - 0.12) / 0.45) * (0.8 + (1 - definition.enterprise) * 0.35);
-        case 'learning':
-            return clamp((use - 0.08) / 0.45) * (0.3 + definition.education * 1.1);
+        case 'judgment':
+            return clamp((use - 0.08) / 0.45);
     }
     return 0;
 }
 
 export function deployedDependency(game: GameState, index: number, ignoreResearch = false) {
-    const deployed = { work: 0, personal: 0, learning: 0, consensual: 0 };
+    const deployed = { work: 0, personal: 0, judgment: 0, consensual: 0 };
     const iqCount = SKILLS.filter(
         (skill) =>
             skill.branch === 'IQ' &&

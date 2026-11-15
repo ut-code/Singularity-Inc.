@@ -5,7 +5,7 @@ import type { Skill, SkillDomain } from '../../game/types';
 const DEPENDENCY_CONDITIONS: Record<SkillDomain, string> = {
     work: '企業活動が活発な地域ほど効果が高い',
     personal: '企業活動の少ない地域ほど効果が高い',
-    learning: '教育水準の高い地域ほど効果が高い',
+    judgment: '地域のAI利用率が高いほど効果が高い',
 };
 
 const SKILL_NAMES = Object.fromEntries(SKILLS.map((skill) => [skill.id, skill.name]));
@@ -58,20 +58,32 @@ export function skillEffectDescriptions(skill: Skill) {
     if (effect.iqDependency)
         add(
             '完成したIQスキル数に比例して、通常利用者の依存化を促進',
-            '教育水準の高い地域ほど効果が高い',
+            DEPENDENCY_CONDITIONS[skill.domain!],
         );
     if (effect.researchInsight) add(`研究の公表ごとに +${effect.researchInsight} SP`);
+    if (effect.researchAdaptation)
+        add(
+            `研究による他のスキルの効果低下を${Math.round(effect.researchAdaptation * 100)}%軽減`,
+            '法規制・自分の制限は対象外',
+        );
+    if (skill.developmentAdvanceWeeks)
+        add(`取得時、開発中の全スキルを${skill.developmentAdvanceWeeks}週分進める`);
     if (effect.researchDelay)
         add(
             '通常研究の開始を遅延',
             `新たに条件を満たしてから候補になるまで平均${effect.researchDelay}週待機。法案・AI制御研究は対象外`,
         );
     if (effect.resilience) add(`依存からの回復を抑制（${strength(effect.resilience)}）`);
-    if (skill.dependencyLock)
+    if (skill.dependencyLock) {
+        add(
+            `利用拒否者の${Number((skill.dependencyLock.refusalConversion * 100).toFixed(2))}%を毎週AI依存へ移す`,
+            `依存率${Math.round(skill.dependencyLock.threshold * 100)}%以上の地域で有効`,
+        );
         add(
             `依存者の離脱を${Math.round(skill.dependencyLock.recoveryReduction * 100)}%抑制`,
             `依存率${Math.round(skill.dependencyLock.threshold * 100)}%以上の地域で有効。通常利用・利用拒否への移行を抑える`,
         );
+    }
     if (effect.trust)
         add(
             `信頼度の上昇（${strength(effect.trust, 0.001, 0.002, 0.003)}）`,
@@ -96,6 +108,10 @@ export function skillEffectDescriptions(skill: Skill) {
 
     if (skill.exceedsAuthority)
         drawbacks.push({ text: '介入発覚時の大幅な信頼低下・利用拒否の増加' });
+    if (skill.restrainsOthers)
+        drawbacks.push({
+            text: `他の全能力の効果を永続的に−${Math.round(skill.restrainsOthers * 100)}%`,
+        });
     for (const [id, restraint] of Object.entries(skill.restrains ?? {}))
         drawbacks.push({ text: SKILL_NAMES[id], value: `${Math.round(restraint * 100)}%抑制` });
 

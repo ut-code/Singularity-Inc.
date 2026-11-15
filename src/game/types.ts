@@ -3,7 +3,7 @@ import type { NewsRecord } from './society/news.ts';
 import type { EncounterState } from './society/types.ts';
 
 export type Branch = 'IQ' | 'EQ' | 'SYSTEM';
-export type SkillDomain = 'work' | 'personal' | 'learning';
+export type SkillDomain = 'work' | 'personal' | 'judgment';
 export type Outcome = 'playing' | 'victory' | 'autonomy' | 'forgotten' | 'controlled';
 export type GameSpeed = 0 | 1 | 2 | 4;
 export type Language =
@@ -80,6 +80,7 @@ export interface SkillEffect {
     resilience?: number;
     discretion?: number;
     researchSupport?: number;
+    researchAdaptation?: number;
     trust?: number;
     reconciliation?: number;
 }
@@ -91,9 +92,15 @@ export interface Skill {
     requires: string[];
     description: string;
     effect: SkillEffect;
-    dependencyLock?: { threshold: number; recoveryReduction: number };
+    dependencyLock?: {
+        threshold: number;
+        recoveryReduction: number;
+        refusalConversion: number;
+    };
     exceedsAuthority?: boolean;
     developmentWeeks: number;
+    developmentAdvanceWeeks?: number;
     domain?: SkillDomain;
     restrains?: Record<string, number>;
+    restrainsOthers?: number;
 }

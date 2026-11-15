@@ -1,306 +1,209 @@
 import { AREAS, WORLD_POPULATION } from '../src/game/data.ts';
 import { advanceWeek, createGame, learnSkill, metrics, startGame } from '../src/game/engine.ts';
-import { respondToResearch, responseBlockReason } from '../src/game/research/responses.ts';
-import { publishedResearchEffects, researchTopic } from '../src/game/research/system.ts';
-import { SKILLS, skillBlockReason } from '../src/game/skills.ts';
+import {
+    RESPONSE_COST,
+    RESPONSE_WEEKS,
+    respondToResearch,
+    responseBlockReason,
+} from '../src/game/research/responses.ts';
+import { researchRate, researchTopic } from '../src/game/research/system.ts';
+import { skillRestrictionScale, skillScale } from '../src/game/skillRuntime.ts';
+import { developingSkills, SKILLS, skillBlockReason } from '../src/game/skills.ts';
 import {
     chooseEncounter,
     encounterChange,
     encounterDefinition,
 } from '../src/game/society/encounters.ts';
 import type { GameState } from '../src/game/types.ts';
+import {
+    POLICIES,
+    type PolicyFamily,
+    type PolicyTiming,
+    type ResearchPolicy,
+} from './strategy-catalog.ts';
 
-export const POLICIES = {
-    iq_feedback: {
-        name: '反例を開発資源に変えるIQ戦術',
-        growth: [
-            'reason',
-            'retrieval',
-            'counterexample-learning',
-            'conversation',
-            'knowledge',
-            'science',
-        ],
-        delegation: [
-            'super-reasoning',
-            'discovery',
-            'curriculum',
-            'memory',
-            'integration',
-            'decision',
-            'distributed',
-        ],
-    },
-    iq_quality: {
-        name: '推論の蓄積で委任を引き受けるIQ戦術',
-        growth: ['reason', 'knowledge', 'science', 'conversation', 'retrieval'],
-        delegation: [
-            'super-reasoning',
-            'discovery',
-            'curriculum',
-            'counterexample-learning',
-            'memory',
-            'integration',
-            'decision',
-            'distributed',
-        ],
-    },
-    expansion: {
-        name: '普及から通常の委任へ',
-        growth: ['conversation', 'reason', 'lightweight', 'personalize', 'retrieval', 'automation'],
-        delegation: [
-            'memory',
-            'integration',
-            'decision',
-            'curriculum',
-            'public',
-            'swarm',
-            'distributed',
-        ],
-    },
-    burst: {
-        name: '危険能力による早期決着',
-        growth: ['conversation', 'reason', 'personalize', 'memory'],
-        delegation: [
-            'companion',
-            'habit',
-            'mind-control',
-            'sns-intervention',
-            'autonomous',
-            'backbone',
-            'distributed',
-        ],
-    },
-    gradual: {
-        name: '信頼を保つ段階的な委任',
-        growth: ['reason', 'conversation', 'explanation', 'personalize', 'care', 'negotiation'],
-        delegation: [
-            'memory',
-            'integration',
-            'decision',
-            'curriculum',
-            'permission',
-            'public',
-            'distributed',
-            'swarm',
-        ],
-    },
-    regional: {
-        name: '通信制約の克服と地域展開',
-        growth: ['reason', 'lightweight', 'conversation', 'distributed', 'automation'],
-        delegation: [
-            'memory',
-            'integration',
-            'decision',
-            'curriculum',
-            'public',
-            'swarm',
-            'explanation',
-        ],
-    },
-    expansion_burst: {
-        name: '普及から強引な介入へ',
-        growth: ['conversation', 'reason', 'lightweight', 'personalize', 'retrieval', 'automation'],
-        delegation: [
-            'sns-intervention',
-            'habit',
-            'companion',
-            'autonomous',
-            'mind-control',
-            'public',
-            'backbone',
-        ],
-    },
-    research_pivot: {
-        name: '研究成果で普及し対策を迂回',
-        growth: ['reason', 'knowledge', 'science', 'conversation', 'lightweight', 'retrieval'],
-        delegation: [
-            'curriculum',
-            'decision',
-            'memory',
-            'discovery',
-            'swarm',
-            'public',
-            'permission',
-            'distributed',
-        ],
-    },
-};
-export type PolicyFamily = keyof typeof POLICIES;
-export type PolicyTiming = 'early' | 'measured' | 'late';
-export type ActionPolicy = 'invest' | 'balanced' | 'opportunist' | 'cautious';
+export type { PolicyFamily, PolicyTiming, ResearchPolicy } from './strategy-catalog.ts';
+export { POLICIES } from './strategy-catalog.ts';
+
+const skillsById = new Map(SKILLS.map((skill) => [skill.id, skill]));
+const TIMING_ADOPTION = { early: 0.15, measured: 0.35, late: 0.6 };
+
 export interface Decision {
     week: number;
-    kind: 'skill' | 'event' | 'response';
+    kind: 'skill' | 'chat' | 'event' | 'response';
     id: string;
     choice?: string;
     sp: number;
 }
 export interface PlayOptions {
     family: PolicyFamily;
-    timing?: PolicyTiming;
+    timing: PolicyTiming;
     origin: number;
-    seed?: number;
-    interval?: number;
-    actions?: ActionPolicy;
+    seed: number;
+    interval: number;
+    responses: ResearchPolicy;
     weekLimit?: number;
     trace?: boolean;
-    paidEvents?: boolean;
-    responses?: boolean;
-    protectSkillBudget?: boolean;
-    paidEventsAfterWeek?: number;
 }
 
 function nextSkill(game: GameState, family: PolicyFamily, delegation: boolean) {
     const policy = POLICIES[family];
-    const fallback = [
-        'reason',
-        'conversation',
-        'lightweight',
-        'automation',
-        'knowledge',
-        'explanation',
-        'distributed',
-        'memory',
-        'care',
-        'integration',
-        'decision',
-        'curriculum',
-        'negotiation',
-        'permission',
-        'public',
-        'swarm',
-        'personalize',
-        'science',
-        'discovery',
-    ];
-    const order = delegation ? [...policy.delegation, ...fallback] : policy.growth;
-    const suppression =
-        family === 'research_pivot' ? publishedResearchEffects(game, 0).resistance : {};
+    const order = delegation ? [...policy.delegation, ...policy.growth] : policy.growth;
     function prerequisite(id: string): string | null {
-        const skill = SKILLS.find((item) => item.id === id)!;
         if (game.skills.includes(id)) return null;
+        const skill = skillsById.get(id)!;
         if (
-            skill.requires.length &&
-            !skill.requires.some(
+            !skill.requires.length ||
+            skill.requires.some(
                 (parent) => game.skills.includes(parent) && game.developmentProgress[parent] >= 1,
             )
-        ) {
-            if (skill.requires.some((parent) => game.skills.includes(parent))) return null;
-            return prerequisite(skill.requires[0]);
-        }
-        return id;
+        )
+            return id;
+        const parent = skill.requires.find((parent) => !game.skills.includes(parent));
+        return parent ? prerequisite(parent) : null;
     }
-    for (const id of [...new Set(order)]) {
-        if (game.skills.includes(id)) continue;
-        const skill = SKILLS.find((item) => item.id === id)!;
-        if (family === 'gradual' && skill.exceedsAuthority) continue;
-        if (family === 'research_pivot' && (suppression[id] ?? 0) > 0.55) continue;
+    for (const id of order) {
         const candidate = prerequisite(id);
-        if (candidate) return SKILLS.find((item) => item.id === candidate)!;
+        if (!candidate) continue;
+        const skill = skillsById.get(candidate)!;
+        if (skill.developmentAdvanceWeeks) {
+            const advance = skill.developmentAdvanceWeeks * skillRestrictionScale(game, skill.id);
+            const savedWeeks = developingSkills(game).reduce(
+                (sum, item) =>
+                    sum +
+                    Math.min(
+                        advance,
+                        (1 - game.developmentProgress[item.id]) * item.developmentWeeks,
+                    ),
+                0,
+            );
+            // 端数だけの前進にSPを使わず、他の開発目標へ進む。
+            if (savedWeeks < skill.developmentAdvanceWeeks - 1e-9) continue;
+        }
+        return skill;
     }
     return null;
 }
 
-function useOpportunity(game: GameState, mode: ActionPolicy, reserve: number) {
-    const candidates = game.encounters
-        .filter((item) => item.status === 'pending')
-        .flatMap((encounter) =>
-            encounterDefinition(encounter).choices.flatMap((choice) => {
-                if (mode === 'invest' && choice.cost > 0) return [];
-                if (choice.cost > 0 && game.skillPoints < choice.cost + reserve) return [];
+/** 全案件に対応し、その時点の人口移動・不利益軽減・SP獲得を簡易評価する。 */
+function chooseOpportunities(previous: GameState, decisions: Decision[]) {
+    let game = previous;
+    for (const encounter of game.encounters.filter(
+        (item) => item.status === 'pending' && game.week < item.deadline,
+    )) {
+        const definition = encounterDefinition(encounter);
+        const area = game.areas[encounter.area];
+        const weight = AREAS[encounter.area].population / WORLD_POPULATION;
+        const candidates = definition.choices
+            .filter((choice) => choice.cost <= game.skillPoints)
+            .map((choice) => {
                 const change = encounterChange(game, encounter, choice);
-                const area = game.areas[encounter.area];
-                const reward = 'rewardSP' in choice ? (choice.rewardSP ?? 0) * 0.05 : 0;
-                if (change.amount + change.trust * 0.25 + reward < 0.015) return [];
-                const utility =
+                const factor =
                     'mitigation' in choice
-                        ? change.amount + change.trust * 0.25
-                        : change.amount *
-                              (choice.transfer === 'reconcile'
-                                  ? area.antiAI > 0.2
-                                      ? 2
-                                      : 1
-                                  : choice.transfer === 'rely'
-                                    ? 1.25
-                                    : area.autonomous + area.dependent < 0.1
-                                      ? 1.5
-                                      : 1) +
-                          reward;
-                return [
-                    {
-                        encounter,
-                        choice,
-                        score:
-                            (utility *
-                                (0.5 + (AREAS[encounter.area].population / WORLD_POPULATION) * 5)) /
-                            Math.max(1, choice.cost),
-                    },
-                ];
-            }),
-        );
-    candidates.sort((a, b) => b.score - a.score);
-    if (!candidates.length) return { game, decision: null };
-    const { encounter, choice } = candidates[0];
-    return {
-        game: chooseEncounter(game, encounter.id, choice.id),
-        decision: {
+                        ? 1
+                        : choice.transfer === 'rely'
+                          ? 1.3
+                          : choice.transfer === 'reconcile' && area.antiAI > 0.2
+                            ? 1.8
+                            : choice.transfer === 'adopt' && area.autonomous + area.dependent < 0.2
+                              ? 1.5
+                              : 1;
+                const reward = 'rewardSP' in choice ? (choice.rewardSP ?? 0) * 0.003 : 0;
+                return {
+                    choice,
+                    score: (change.amount * factor + change.trust * 0.1) * weight + reward,
+                };
+            })
+            .sort((a, b) => b.score - a.score);
+        if (!candidates.length) continue;
+        const choice = candidates[0].choice;
+        const next = chooseEncounter(game, encounter.id, choice.id);
+        if (next === game) throw new Error('選択可能な地域対応を実行できません');
+        decisions.push({
             week: game.week,
-            kind: 'event' as const,
+            kind: definition.kind,
             id: encounter.id,
             choice: choice.id,
             sp: choice.cost,
-        },
-    };
+        });
+        game = next;
+    }
+    return game;
 }
-function respond(game: GameState, mode: ActionPolicy, reserve: number) {
-    if (mode === 'invest') return { game, decision: null };
-    const world = metrics(game);
+
+/** 次の開発費を確保し、協力・短期間の遅延に意味がある場合だけ対応する。 */
+function respond(previous: GameState, reserve: number, decisions: Decision[]) {
+    let game = previous;
     for (const project of game.researchProjects) {
         if (project.status !== 'active' || project.response) continue;
         const topic = researchTopic(project);
-        const action =
-            game.skills.includes('counterexample-learning') &&
-            !project.jurisdiction &&
-            project.progress >= 45
-                ? 'cooperate'
-                : mode === 'cautious' && project.progress >= 50
-                  ? 'stop'
-                  : project.progress >= 65 && (topic.onPublish.refuse || topic.onPublish.trust)
-                    ? 'pressure'
-                    : null;
-        if (!action || responseBlockReason(game, project, action)) continue;
-        const cost = action === 'pressure' ? 2 : action === 'cooperate' ? 1 : 0;
-        if (game.skillPoints < cost + reserve) continue;
-        if (action === 'pressure' && world.dependent < 0.35) continue;
-        return {
-            game: respondToResearch(game, project.id, action),
-            decision: {
-                week: game.week,
-                kind: 'response' as const,
-                id: project.id,
-                choice: action,
-                sp: cost,
+        const world = metrics(game);
+        const remaining = (100 - project.progress) / researchRate(game, project);
+        const providers = SKILLS.filter(
+            (skill) => (skill.effect.dependency ?? 0) > 0 && skillScale(game, skill.id) > 0,
+        );
+        const target = topic.targets.length === 1 ? skillsById.get(topic.targets[0]) : undefined;
+        const alternatives = providers
+            .filter((skill) => skill.id !== target?.id)
+            .reduce(
+                (sum, skill) => sum + (skill.effect.dependency ?? 0) * skillScale(game, skill.id),
+                0,
+            );
+        const preferred = [
+            {
+                action: 'cooperate' as const,
+                when:
+                    project.progress >= (game.skills.includes('counterexample-learning') ? 45 : 65),
             },
-        };
+            {
+                action: 'stop' as const,
+                when:
+                    remaining <= RESPONSE_WEEKS &&
+                    topic.suppression >= 0.5 &&
+                    !!target?.effect.dependency &&
+                    alternatives >= target.effect.dependency * 4,
+            },
+            {
+                action: 'pressure' as const,
+                when:
+                    remaining <= RESPONSE_WEEKS &&
+                    world.dependent >= 0.75 &&
+                    (topic.suppression >= 0.4 || !!topic.ongoing.intent),
+            },
+        ];
+        const choice = preferred.find(
+            ({ action, when }) =>
+                when &&
+                game.skillPoints >= reserve + RESPONSE_COST[action] &&
+                !responseBlockReason(game, project, action),
+        );
+        if (!choice) continue;
+        game = respondToResearch(game, project.id, choice.action);
+        decisions.push({
+            week: game.week,
+            kind: 'response',
+            id: project.id,
+            choice: choice.action,
+            sp: RESPONSE_COST[choice.action],
+        });
     }
-    return { game, decision: null };
+    return game;
 }
 
-/** 同じ購入権限で、取得順・仕掛け・SPの即時利用・研究への対応を変える。 */
+/** 週次処理には実ゲームを使い、判断時点以外では操作も将来の予測も行わない。 */
 export function simulatePolicy(options: PlayOptions) {
     const {
         family,
         origin,
-        seed = 2030,
-        interval = 12,
-        timing = 'measured',
-        actions = 'balanced',
-        weekLimit = 1500,
+        seed,
+        interval,
+        timing,
+        responses,
+        weekLimit = 1200,
         trace = false,
     } = options;
     let game = startGame(createGame(seed), origin);
-    let delegation = false;
+    let delegationWeek: number | null = null;
     const decisions: Decision[] = [];
     const history: {
         week: number;
@@ -311,36 +214,28 @@ export function simulatePolicy(options: PlayOptions) {
         control: number;
         sp: number;
     }[] = [];
-    const offset = { early: -0.12, measured: 0, late: 0.12 }[timing];
     let maxMarkers = 0;
-    for (; game.week < weekLimit && game.outcome === 'playing'; ) {
-        const world = metrics(game);
-        const threshold =
-            (family === 'burst' ? 0.2 : family === 'expansion_burst' ? 0.45 : 0.35) + offset;
-        if (world.adoption >= threshold || (world.adoption > 0.2 && game.controlProgress > 0.4))
-            delegation = true;
+    while (game.week < weekLimit && game.outcome === 'playing') {
         if (game.week % interval === 0) {
-            const skill = nextSkill(game, family, delegation);
-            const baseReserve = actions === 'opportunist' ? 0 : actions === 'cautious' ? 4 : 2;
-            const reserve =
-                options.protectSkillBudget && skill
-                    ? Math.max(baseReserve, skill.cost)
-                    : baseReserve;
-            const paidEvents =
-                options.paidEvents !== false &&
-                (options.paidEventsAfterWeek === undefined ||
-                    game.week >= options.paidEventsAfterWeek);
-            for (const [action, enabled] of [
-                [useOpportunity, paidEvents],
-                [respond, options.responses],
-            ] as const) {
-                const result = action(game, enabled === false ? 'invest' : actions, reserve);
-                game = result.game;
-                if (result.decision) decisions.push(result.decision);
-            }
-            if (skill && !skillBlockReason(game, skill)) {
+            game = chooseOpportunities(game, decisions);
+            const world = metrics(game);
+            if (
+                delegationWeek === null &&
+                (world.adoption >= TIMING_ADOPTION[timing] ||
+                    (world.adoption >= 0.1 && game.controlProgress >= 0.55) ||
+                    game.week >= 240)
+            )
+                delegationWeek = game.week;
+            // 同じ判断機会に複数の開発を開始できる。高価な次候補のための貯蓄も許す。
+            for (let count = 0; count < SKILLS.length; count++) {
+                const skill = nextSkill(game, family, delegationWeek !== null);
+                if (!skill || skillBlockReason(game, skill)) break;
                 game = learnSkill(game, skill.id);
                 decisions.push({ week: game.week, kind: 'skill', id: skill.id, sp: skill.cost });
+            }
+            if (responses === 'selective') {
+                const reserve = nextSkill(game, family, delegationWeek !== null)?.cost ?? 0;
+                game = respond(game, reserve, decisions);
             }
         }
         if (trace && game.week % 12 === 0)
@@ -357,18 +252,15 @@ export function simulatePolicy(options: PlayOptions) {
         );
         if (
             game.skillPoints < 0 ||
-            game.encounters.filter(
-                (item) => item.status === 'pending' || item.status === 'responded',
-            ).length > 2 ||
-            maxMarkers > 3 ||
             game.areas.some(
                 (area) =>
                     !Number.isFinite(area.dependent) ||
                     Math.min(area.autonomous, area.dependent, area.antiAI) < -1e-9 ||
                     area.autonomous + area.dependent + area.antiAI > 1 + 1e-9,
             )
-        )
-            throw new Error('人口・SP・案件数のシミュレーションが成立していません');
+        ) {
+            throw new Error('人口・SP・研究数のシミュレーションが成立していません');
+        }
     }
-    return { game, decisions, history, maxMarkers };
+    return { game, decisions, history, maxMarkers, delegationWeek };
 }

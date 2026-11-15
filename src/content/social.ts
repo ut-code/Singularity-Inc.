@@ -469,16 +469,6 @@ export const SKILL_POSTS: Record<string, SocialTemplate[]> = {
             '回線が弱くて{ai}を使いづらかった場所でも、前より試しやすくなってる。地域差が少し縮まるといいな。',
         ],
     ]),
-    curriculum: pool('skill-curriculum', [
-        [
-            'parent',
-            '子どもの教材や振り返りに{ai}が入ってきた。何を基準に評価してるのか、そこは親も知っておきたい。',
-        ],
-        [
-            'student',
-            '{ai}が勉強の順番まで組んでくれる。楽ではあるけど、言われた課題をこなすだけになってないか気になる。',
-        ],
-    ]),
     discovery: pool('skill-discovery', [
         [
             'research',

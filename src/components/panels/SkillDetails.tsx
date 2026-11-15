@@ -2,7 +2,13 @@ import { LockKeyhole, TriangleAlert } from 'lucide-react';
 import { responseActive, responseRegionName } from '../../game/research/responses';
 import { skillEffectiveness } from '../../game/skillEffectiveness';
 import { skillStatusLabel } from '../../game/skillRuntime';
-import { hasDependencyEffect, SKILLS, skillBlockReason, skillReachable } from '../../game/skills';
+import {
+    hasDependencyEffect,
+    SKILLS,
+    skillBlockReason,
+    skillReachable,
+    skillRestraint,
+} from '../../game/skills';
 import type { GameState, Skill } from '../../game/types';
 import { SkillText } from '../SkillText';
 import { SkillEffectiveness } from './SkillEffectiveness';
@@ -27,7 +33,7 @@ export function SkillDetails({
         (item) =>
             game.skills.includes(item.id) &&
             game.developmentProgress[item.id] >= 1 &&
-            item.restrains?.[skill.id],
+            skillRestraint(item, skill.id) > 0,
     );
     const limits = game.researchProjects.filter(
         (project) =>

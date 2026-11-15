@@ -2,10 +2,11 @@ import { AREAS, WORLD_POPULATION } from './data.ts';
 import { clamp } from './metrics.ts';
 import { operationScale, responseActive } from './research/responses.ts';
 import { publishedResearchEffects } from './research/system.ts';
-import { SKILLS } from './skills.ts';
+import { SKILLS, skillRestraint } from './skills.ts';
 import type { AreaDefinition, GameState, SkillEffect } from './types.ts';
 
-const RESTRAINT_SKILLS = SKILLS.filter((skill) => skill.restrains);
+const RESTRAINT_SKILLS = SKILLS.filter((skill) => skill.restrains || skill.restrainsOthers);
+const ADAPTATION_SKILLS = SKILLS.filter((skill) => skill.effect.researchAdaptation);
 const EMPTY_EFFECTS: Required<SkillEffect> = {
     researchDelay: 0,
     researchInsight: 0,
@@ -20,6 +21,7 @@ const EMPTY_EFFECTS: Required<SkillEffect> = {
     resilience: 0,
     discretion: 0,
     researchSupport: 0,
+    researchAdaptation: 0,
     trust: 0,
     reconciliation: 0,
 };
@@ -42,11 +44,12 @@ function hasRegionalRestrictions(game: GameState) {
 }
 export const INTENT_REFUSAL_PRESSURE = 0.1;
 export const SNS_REFUSAL_REDUCTION = 0.7;
-export const SNS_RECONCILIATION = 0.064;
+export const SNS_RECONCILIATION = 0.016;
 
 export function skillStatusLabel(game: GameState, id: string) {
     const progress = game.developmentProgress[id];
     if (progress < 1) return `開発中 ${Math.floor(progress * 100)}%`;
+    if (SKILLS.find((skill) => skill.id === id)!.developmentAdvanceWeeks) return '使用済み';
     if (game.exposedSkills.includes(id)) return '介入が発覚';
     const lock = SKILLS.find((skill) => skill.id === id)!.dependencyLock;
     if (lock) {
@@ -89,33 +92,42 @@ export function skillRestrictionScale(game: GameState, id: string, index?: numbe
             0,
         );
     }
-    return (
-        playerRestrictionScale(game, id, index) *
-        (1 - (publishedResearchEffects(game, index).resistance[id] ?? 0))
-    );
+    return playerRestrictionScale(game, id, index) * researchRestrictionScale(game, id, index);
+}
+
+/** 適応元自身への抑制は軽減せず、自己参照を避ける。法規制もそのまま適用する。 */
+export function researchRestrictionScale(game: GameState, id: string, index: number) {
+    const effects = publishedResearchEffects(game, index);
+    const resistance = effects.resistance[id] ?? 0;
+    const regulation = effects.regulationResistance[id] ?? 0;
+    if (resistance === 0) return 1 - regulation;
+    let adaptation = 0;
+    for (const skill of ADAPTATION_SKILLS) {
+        if (skill.id === id) continue;
+        adaptation += skill.effect.researchAdaptation! * skillScale(game, skill.id, index);
+    }
+    return (1 - resistance * (1 - clamp(adaptation))) * (1 - regulation);
 }
 
 /** 自分で取得した制約と運用停止。研究を適用する前の比較にも用いる。 */
 export function playerRestrictionScale(game: GameState, id: string, index?: number): number {
     let scale = 1;
-    for (const skill of RESTRAINT_SKILLS)
-        if (
-            game.skills.includes(skill.id) &&
-            game.developmentProgress[skill.id] >= 1 &&
-            skill.restrains![id]
-        )
-            scale *= 1 - skill.restrains![id] * skillScale(game, skill.id, index);
+    for (const skill of RESTRAINT_SKILLS) {
+        if (!game.skills.includes(skill.id) || game.developmentProgress[skill.id] < 1) continue;
+        const restraint = skillRestraint(skill, id);
+        if (restraint > 0) scale *= 1 - restraint * skillScale(game, skill.id, index);
+    }
     return scale * operationScale(game, id, index);
 }
-export function advanceSkillDevelopment(game: GameState) {
+export function advanceSkillDevelopment(game: GameState, weeks = 1) {
     const progress = { ...game.developmentProgress };
     for (const id of game.skills) {
         if (progress[id] >= 1) continue;
         const skill = SKILLS.find((item) => item.id === id)!;
-        progress[id] = Math.min(
-            1,
-            (Math.round(progress[id] * skill.developmentWeeks) + 1) / skill.developmentWeeks,
-        );
+        // 能力制限で生じる週の端数を保ち、浮動小数の誤差による完成の遅れを防ぐ。
+        const developedWeeks =
+            Math.round((progress[id] * skill.developmentWeeks + weeks) * 1e9) / 1e9;
+        progress[id] = Math.min(1, developedWeeks / skill.developmentWeeks);
     }
     return progress;
 }

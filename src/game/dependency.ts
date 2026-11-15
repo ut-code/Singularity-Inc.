@@ -18,9 +18,9 @@ export function dependencyDynamics(
     const use = area.autonomous + area.dependent;
     const deployed = deployedDependency(game, index, true);
     const protectedDeployment = deployedDependency(game, index);
-    const potential = deployed.work + deployed.personal + deployed.learning;
+    const potential = deployed.work + deployed.personal + deployed.judgment;
     const effective =
-        protectedDeployment.work + protectedDeployment.personal + protectedDeployment.learning;
+        protectedDeployment.work + protectedDeployment.personal + protectedDeployment.judgment;
     const prematureDelegation = Math.max(0, effect.dependency - effective);
     const independentChoice = (0.006 * (potential - effective)) / (1 + potential);
     // 信頼は合意のある委任を支える。強制的な介入や人間側の対策には効かない。
@@ -28,7 +28,7 @@ export function dependencyDynamics(
     const delegation =
         protectedDeployment.work * (0.85 + 0.3 * clamp(effect.compliance / 1.2)) +
         protectedDeployment.personal +
-        protectedDeployment.learning +
+        protectedDeployment.judgment +
         protectedDeployment.consensual * acceptance * 0.35;
     const incidentalDelegation =
         use *

@@ -3,6 +3,18 @@ import type { GameState, Skill } from './types.ts';
 
 export const SKILLS: Skill[] = SKILL_CONTENT;
 
+export function developingSkills(state: Pick<GameState, 'skills' | 'developmentProgress'>) {
+    return SKILLS.filter(
+        (skill) => state.skills.includes(skill.id) && state.developmentProgress[skill.id] < 1,
+    );
+}
+
+/** 自身を除く全能力への制約、または対象別の制約を返す。 */
+export function skillRestraint(skill: Skill, targetId: string) {
+    if (skill.id === targetId) return 0;
+    return skill.restrainsOthers ?? skill.restrains?.[targetId] ?? 0;
+}
+
 export function hasDependencyEffect(skill: Skill) {
     return Boolean(
         skill.effect.dependency ||
@@ -33,6 +45,8 @@ export function skillBlockReason(
         return state.skills.includes(skill.requires[0])
             ? '前提スキルの完成待ち'
             : '前提スキルの開発が必要';
+    if (skill.developmentAdvanceWeeks && developingSkills(state).length === 0)
+        return '開発中のスキルがありません';
     const cost = skill.cost;
     if (state.skillPoints < cost) return `${cost - state.skillPoints} SP不足`;
     return null;

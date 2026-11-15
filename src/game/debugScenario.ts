@@ -6,6 +6,7 @@ import { seededValue } from './random.ts';
 import { politicalAccess } from './regions.ts';
 import type { ResearchProject } from './research/types.ts';
 import { SKILLS } from './skills.ts';
+import { ENCOUNTER_RESPONSE_WEEKS } from './society/encounters.ts';
 import type { GameState } from './types.ts';
 
 const MIDDLE_SKILLS = [
@@ -24,7 +25,7 @@ const MIDDLE_SKILLS = [
 const LATE_SKILLS = [
     ...MIDDLE_SKILLS,
     'care',
-    'curriculum',
+    'learning-transfer',
     'decision',
     'public',
     'distributed',
@@ -115,7 +116,7 @@ export function createDebugScenario(current: GameState, targetWeek: number): Gam
             definitionId: id,
             area: index === 0 ? 23 : 3,
             startedWeek: targetWeek - 8,
-            deadline: targetWeek + (index === 0 ? 24 : 34),
+            deadline: targetWeek - 8 + ENCOUNTER_RESPONSE_WEEKS,
             strength: late ? 1.25 : 1.05,
             status: 'pending',
         };

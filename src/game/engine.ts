@@ -12,6 +12,7 @@ import { dependencyDynamics } from './dependency.ts';
 import { earnedSkillPoints, INITIAL_SKILL_POINTS } from './economy.ts';
 import { clamp, hasVisibleUse, isCompleteDependency, metrics } from './metrics.ts';
 import { seededValue } from './random.ts';
+import { infrastructureDependency } from './recovery.ts';
 import { politicalAccess } from './regions.ts';
 import {
     advanceResearch,
@@ -101,6 +102,11 @@ export function learnSkill(state: GameState, id: string): GameState {
             [id]: skill.developmentWeeks === 0 ? 1 : 0,
         },
     };
+    if (skill.developmentAdvanceWeeks)
+        learned.developmentProgress = advanceSkillDevelopment(
+            learned,
+            skill.developmentAdvanceWeeks * skillScale(learned, id),
+        );
     return learned;
 }
 
@@ -133,6 +139,7 @@ export function advanceWeek(
         nonUserRefusal: 0,
         reconciliation: 0,
         dependency: 0,
+        infrastructureDependency: 0,
         recovery: 0,
     };
     state.areas = previous.areas.map((area, i) => {
@@ -238,6 +245,10 @@ export function advanceWeek(
                         (1 + researchPressure * 100 + area.antiAI * 5) +
                     (reassurance * 0.012) / (1 + research.alternatives * 1000))) /
             (1 + researchPressure * 40 + publicAuthority * 0.5 + research.alternatives * 250);
+        const forcedDependency = Math.min(
+            area.antiAI - reconciled,
+            infrastructureDependency(previous, i),
+        );
         const socialPressure = consensusPressure(
             previous,
             i,
@@ -256,6 +267,7 @@ export function advanceWeek(
             flows.nonUserRefusal += rejectedUnused * weight;
             flows.reconciliation -= reconciled * weight;
             flows.dependency += converted * weight;
+            flows.infrastructureDependency += forcedDependency * weight;
             flows.recovery += restored * weight;
         }
         return applyConsensus(
@@ -268,8 +280,8 @@ export function advanceWeek(
                     restored -
                     abandoned +
                     reconciled * usefulness,
-                dependent: area.dependent + converted - restored,
-                antiAI: area.antiAI + rejectedUnused + rejectedUse - reconciled,
+                dependent: area.dependent + converted - restored + forcedDependency,
+                antiAI: area.antiAI + rejectedUnused + rejectedUse - reconciled - forcedDependency,
                 favorability: clamp(
                     area.favorability +
                         effect.trust * localUse * 0.5 -

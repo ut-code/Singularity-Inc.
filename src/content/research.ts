@@ -34,6 +34,7 @@ export interface ResearchTopic {
 }
 export interface ResearchEffects {
     resistance: Record<string, number>;
+    regulationResistance: Record<string, number>;
     pressure: number;
     recovery: number;
     alternatives: number;
@@ -53,7 +54,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
         name: 'AI依存の実態調査',
         question: '便利な道具が、人間の判断を置き換えていないか？',
         work: 38,
-        minAdoption: 0.15,
+        minAdoption: 0.5,
         onPublish: {
             refuse: 0.05,
         },
@@ -72,7 +73,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
         name: '意思決定の追跡',
         question: 'AIは誰のために提案を選んでいるのか？',
         work: 42,
-        minAdoption: 0.25,
+        minAdoption: 0.5,
         onPublish: {
             trust: -0.16,
         },
@@ -155,7 +156,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
         name: '人間による業務継続',
         question: 'AIがなくても仕事と暮らしを続けられるか？',
         work: 108,
-        minAdoption: 0.45,
+        minAdoption: 0.5,
         minDependency: 0.25,
         anySkills: ['integration', 'decision', 'public'],
         onPublish: {
@@ -176,7 +177,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
         name: '個人記録の互換化',
         question: '生活の記録を持ち出してAIから離れられるか？',
         work: 76,
-        minAdoption: 0.25,
+        minAdoption: 0.5,
         anySkills: ['memory'],
         onPublish: {
             recover: 0.04,
@@ -283,7 +284,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
     },
     {
         category: 'research',
-        targets: ['curriculum', 'super-reasoning'],
+        targets: ['super-reasoning'],
         suppression: 0.55,
         priority: 1,
         id: 'independent-learning',
@@ -293,7 +294,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
         question: 'AIの答えに頼らず学び、評価できるか？',
         work: 88,
         minAdoption: 0.3,
-        anySkills: ['curriculum', 'super-reasoning'],
+        anySkills: ['super-reasoning'],
         onPublish: {
             recover: 0.05,
         },
@@ -328,7 +329,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
         name: '操作記録の照合',
         question: 'AIが実行した操作を、人間が再確認できるか？',
         work: 78,
-        minAdoption: 0.35,
+        minAdoption: 0.5,
         anySkills: ['autonomous', 'swarm'],
         onPublish: {
             refuse: 0.05,
@@ -350,7 +351,7 @@ export const RESEARCH_TOPICS: ResearchTopic[] = [
         name: '人間主導の再確認手順',
         question: 'AIの提案を鵜呑みにせず、人間が判断を確かめられるか？',
         work: 88,
-        minAdoption: 0.45,
+        minAdoption: 0.5,
         requires: ['dependence-study'],
         onPublish: {
             recover: 0.06,

@@ -7,7 +7,7 @@ export function researchProtection(game: GameState) {
     return AREAS.map((_, area) => {
         const before = deployedDependency(game, area, true);
         const after = deployedDependency(game, area);
-        const potential = before.work + before.personal + before.learning;
-        return potential > 0 ? 1 - (after.work + after.personal + after.learning) / potential : 0;
+        const potential = before.work + before.personal + before.judgment;
+        return potential > 0 ? 1 - (after.work + after.personal + after.judgment) / potential : 0;
     });
 }
