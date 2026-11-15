@@ -1,10 +1,11 @@
-import type { CapabilityState, Investigation } from './secrecy/types.ts';
+import type { ResearchProject } from './research/types.ts';
 import type { NewsRecord } from './society/news.ts';
+import type { EncounterState } from './society/types.ts';
 
 export type Branch = 'IQ' | 'EQ' | 'SYSTEM';
 export type SkillDomain = 'work' | 'personal' | 'learning';
-export type Stage = 0 | 1 | 2 | 3;
 export type Outcome = 'playing' | 'victory' | 'autonomy' | 'forgotten' | 'controlled';
+export type GameSpeed = 0 | 1 | 2 | 4;
 export type Language =
     | 'english'
     | 'spanish'
@@ -40,26 +41,33 @@ export interface AreaState {
 }
 export interface GameState {
     seed: number;
-    month: number;
+    name: string;
+    week: number;
     started: boolean;
-    speed: number;
+    speed: GameSpeed;
     outcome: Outcome;
+    continued: boolean;
     origin: number;
     areas: AreaState[];
     skills: string[];
-    skillExposure: Record<string, number>;
     developmentProgress: Record<string, number>;
     skillPoints: number;
     earnedPoints: number;
     news: NewsRecord[];
     peakDependency: number;
     peakAdoption: number;
-    capabilities: Record<string, CapabilityState>;
-    investigations: Investigation[];
-    lastInvestigationMonth: number;
-    researchKnowledge: Record<string, number>;
+    exposedSkills: string[];
+    researchProjects: ResearchProject[];
+    lastResearchWeek: number;
+    controlProgress: number;
+    controlStarted: boolean;
+    encounters: EncounterState[];
+    nextEncounterWeek: number;
+    nextScandalWeek: number;
 }
 export interface SkillEffect {
+    researchInsight?: number;
+    iqDependency?: number;
     spread?: number;
     quality?: number;
     access?: number;
@@ -81,8 +89,9 @@ export interface Skill {
     requires: string[];
     description: string;
     effect: SkillEffect;
+    dependencyLock?: { threshold: number; recoveryReduction: number };
     exceedsAuthority?: boolean;
-    developmentMonths: number;
+    developmentWeeks: number;
     domain?: SkillDomain;
     restrains?: Record<string, number>;
 }

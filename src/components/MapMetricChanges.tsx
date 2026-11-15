@@ -1,6 +1,6 @@
 import { Heart, HeartCrack } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MONTH_MS } from '../game/data';
+import { ANIMATION_SPEED, WEEK_MS } from '../game/data';
 import type { AreaState } from '../game/types';
 import type { Point } from '../map/geometry';
 import {
@@ -26,7 +26,7 @@ interface Popup extends MetricChange {
 // 表示演出の予約量を固定し、大きな指標変化でもDOMと待ち行列を増やし続けない。
 const MAX_POPUPS = 128;
 const POPUP_SPACING = 90;
-const SCHEDULE_WINDOW = MONTH_MS;
+const SCHEDULE_WINDOW = WEEK_MS * ANIMATION_SPEED;
 
 export function MapMetricChanges({
     areaStates,
@@ -72,7 +72,7 @@ export function MapMetricChanges({
         baseline.current = accumulated.baseline;
         const changes = accumulated.changes;
         if (!changes.length) return;
-        // 地域順をシャッフルし、1か月分の時間枠へ均等に分散する。
+        // 地域順をシャッフルし、1週分の時間枠へ均等に分散する。
         // 各枠にも揺らぎを入れ、ランダム抽選だけで生じる表示の密集や空白を抑える。
         const shuffled = [...changes];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -91,7 +91,7 @@ export function MapMetricChanges({
         }));
         appearances.current = activeReservations;
         const incoming = scheduled.flatMap(({ change, at }) => {
-            // 前月から予約済みの通知の間にも差し込み、末尾へ一括で積まない。
+            // 前週から予約済みの通知の間にも差し込み、末尾へ一括で積まない。
             let start = at;
             for (const reserved of [...appearances.current].sort((a, b) => a - b)) {
                 if (reserved > start + POPUP_SPACING) break;
@@ -146,7 +146,8 @@ export function MapMetricChanges({
             previous = performance.now();
         };
         const advance = (now: number) => {
-            if (!document.hidden) elapsed.current += Math.min(now - previous, 250) * speed;
+            if (!document.hidden)
+                elapsed.current += Math.min(now - previous, 250) * speed * ANIMATION_SPEED;
             previous = now;
             // 自動再生とゲーム内時間を二重に進めず、単一の時計から全アイコンを描く。
             for (const { animation, createdAt } of popupAnimations.current) {

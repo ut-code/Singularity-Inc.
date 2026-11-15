@@ -12,3 +12,4 @@ AGENTS.md
 .aws/
 .env
 output/
+.playwright-cli/

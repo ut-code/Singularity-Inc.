@@ -28,8 +28,11 @@ export function skillTraits(skill: Skill) {
                     : utility > 0
                       ? '低'
                       : 'なし',
-        dependency:
-            dependency >= 1
+        dependency: skill.dependencyLock
+            ? '高依存地域を維持'
+            : effect.iqDependency
+              ? '取得IQ数に比例'
+              : dependency >= 1
                 ? '極高'
                 : dependency >= 0.6
                   ? '高'

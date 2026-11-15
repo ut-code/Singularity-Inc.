@@ -69,6 +69,11 @@
 }
 body {
     margin: 0;
+    user-select: none;
+}
+input,
+textarea {
+    user-select: text;
 }
 /* 指標の良し悪しではなく、数値が上昇・低下する方向を表す共通色。 */
 [data-change="up"] {
@@ -85,8 +90,8 @@ button {
     border: 1px solid var(--line);
     border-radius: var(--radius-control);
     transition:
-        background 0.18s,
-        border-color 0.18s;
+        background 0.09s,
+        border-color 0.09s;
 }
 button:hover:not(:disabled) {
     background: var(--surface-hover);

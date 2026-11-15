@@ -2,7 +2,8 @@ import type { SkillEffectiveness as Effectiveness } from '../../game/skillEffect
 import type { Skill } from '../../game/types';
 
 export function effectivenessLabel(skill: Skill) {
-    return skill.effect.dependency
+    if (skill.dependencyLock) return '回復抑制効果';
+    return skill.effect.dependency || skill.effect.iqDependency
         ? '依存効果'
         : skill.id === 'sns-intervention'
           ? '介入効果'

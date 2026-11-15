@@ -110,8 +110,7 @@
         padding: 6px 8px;
         transform: none;
     }
-    .area-card,
-    .sns-panel {
+    .area-card {
         top: calc(var(--mobile-top) + 82px + var(--countermeasure-offset));
         bottom: calc(var(--mobile-bottom) + 192px);
         left: var(--mobile-left);
@@ -129,7 +128,6 @@
         height: 44px;
     }
     .area-card,
-    .sns-panel,
     .modal,
     .skill-details,
     .tree-viewport {
@@ -168,7 +166,7 @@
         grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
     }
     .tree-viewport {
-        overflow: auto;
+        overflow: hidden;
     }
     .skill-tree {
         width: 100%;
@@ -192,8 +190,7 @@
         top: calc(var(--mobile-top) + 82px);
         bottom: calc(var(--mobile-bottom) + 112px);
     }
-    .area-card,
-    .sns-panel {
+    .area-card {
         top: var(--mobile-top);
         bottom: var(--mobile-bottom);
     }

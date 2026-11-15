@@ -66,12 +66,13 @@ export const WorldMap = memo(function WorldMap({
     humanProtection,
     serverArea,
     onAreaSelect,
-    initialLongitude = 138,
+    initialLongitude = 150,
     trafficSpeed,
     trafficTick,
     onAreaInspect,
     encounters = [],
     onEncounterSelect,
+    showAreaControls = true,
 }: {
     regions: MapRegion[];
     selectedArea: number | null;
@@ -91,6 +92,7 @@ export const WorldMap = memo(function WorldMap({
     onAreaInspect?: (id: number | null) => void;
     encounters?: MapEncounter[];
     onEncounterSelect?: (id: string) => void;
+    showAreaControls?: boolean;
 }) {
     const viewport = useRef<HTMLDivElement>(null),
         canvas = useRef<HTMLCanvasElement>(null);
@@ -483,18 +485,19 @@ export const WorldMap = memo(function WorldMap({
                 view={markerView}
             />
             <div className={styles.screenReaderOnly} role="group" aria-label="画面内の小地域">
-                {targets.map((target) => (
-                    <button
-                        type="button"
-                        key={`${target.kind}:${target.id}`}
-                        aria-pressed={selected === target.area}
-                        onFocus={() => hover(target)}
-                        onBlur={() => hover(null)}
-                        onClick={() => select(target)}
-                    >
-                        {target.label}
-                    </button>
-                ))}
+                {showAreaControls &&
+                    targets.map((target) => (
+                        <button
+                            type="button"
+                            key={`${target.kind}:${target.id}`}
+                            aria-pressed={selected === target.area}
+                            onFocus={() => hover(target)}
+                            onBlur={() => hover(null)}
+                            onClick={() => select(target)}
+                        >
+                            {target.label}
+                        </button>
+                    ))}
             </div>
             <span className={styles.screenReaderOnly} aria-live="polite">
                 {selected !== null ? '小地域を選択中' : '小地域は選択されていません'}

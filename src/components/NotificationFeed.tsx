@@ -4,17 +4,16 @@ import { researchPresentation } from './society/researchPresentation';
 
 export function NotificationFeed({ speed }: { speed: number }) {
     const items = useGameStore((state) => state.notifications.items);
-    const investigations = useGameStore((state) => state.game!.investigations);
+    const researchProjects = useGameStore((state) => state.game!.researchProjects);
     if (!items.length) return null;
     return (
         <section className={styles.feed} aria-label="通知" data-animation-speed={speed}>
             <ol className={styles.items}>
                 {items.map((item) => {
-                    const project = investigations.find(
-                        (project) => project.id === item.investigationId,
+                    const project = researchProjects.find(
+                        (project) => project.id === item.researchProjectId,
                     );
-                    const presentation =
-                        project?.kind === 'research' ? researchPresentation(project) : null;
+                    const presentation = project ? researchPresentation(project) : null;
                     const Icon = presentation?.Icon;
                     return (
                         <li

@@ -143,55 +143,193 @@
     font-size: 13px;
     line-height: 1.9;
 }
-.origin-panel .origin-options {
+/* 地図を操作する領域と、選んだ拠点を確定する領域を分ける。 */
+.origin-selection {
+    position: fixed;
+    inset: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 30px;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) 304px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 24px;
+    padding: 28px 32px;
+    background: var(--surface-page);
 }
-.origin-options button {
+.origin-heading {
+    grid-column: 1 / -1;
+}
+.origin-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0;
+    color: var(--muted);
+    border: 0;
+    background: transparent;
+    font-size: 12px;
+}
+.origin-heading h1 {
+    margin: 8px 0;
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 400;
+}
+.origin-heading p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+.origin-map {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+}
+.origin-markers {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+.origin-location {
+    position: absolute;
+}
+.origin-leader {
+    position: absolute;
+    left: -100px;
+    top: -100px;
+    overflow: visible;
+    stroke: var(--text-secondary);
+    fill: var(--accent);
+    pointer-events: none;
+}
+.origin-marker {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    background: var(--surface-overlay);
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-panel);
+}
+.origin-marker-label {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 18px;
-    text-align: left;
-}
-.origin-options .origin-copy {
-    display: grid;
-    gap: 4px;
-}
-.origin-copy strong {
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    background: var(--surface-overlay);
     color: var(--text);
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 13px;
+    white-space: nowrap;
 }
-.origin-copy > span {
+.origin-marker[data-area="26"] .origin-marker-label {
+    bottom: calc(100% + 26px);
+}
+.origin-marker[data-area="23"] .origin-marker-label,
+.origin-marker[data-area="28"] .origin-marker-label,
+.origin-marker[data-area="18"] .origin-marker-label {
+    top: calc(100% + 8px);
+    bottom: auto;
+}
+.origin-marker[aria-pressed="true"],
+.origin-marker[aria-pressed="true"]:hover {
+    z-index: 1;
+    background: var(--surface-panel);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+.origin-marker[aria-pressed="true"] .origin-marker-label {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+.origin-marker:hover .origin-marker-label {
+    border-color: var(--accent);
+}
+.compact .origin-marker {
+    width: max-content;
+    padding: 0 10px;
+    border-radius: var(--radius-control);
+}
+.compact .origin-marker > svg {
+    display: none;
+}
+.compact .origin-marker .origin-marker-label {
+    position: static;
+    transform: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+.origin-briefing {
+    align-self: center;
+    padding: 24px;
+}
+.origin-briefing-copy {
+    min-height: 230px;
+}
+.origin-briefing h2 {
+    margin: 0 0 12px;
+    font-size: 24px;
+    font-weight: 400;
+}
+.origin-organization {
+    margin: 0 0 24px;
+    color: var(--muted);
     font-size: 12px;
-    color: var(--muted);
-    line-height: 1.6;
 }
-.origin-options svg {
-    flex-shrink: 0;
-    color: var(--muted);
+.origin-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.8;
 }
-.origin-goal {
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid var(--line);
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px 16px;
+.origin-reach {
+    margin: 24px 0;
     font-size: 12px;
     line-height: 1.8;
 }
-.origin-goal p {
-    margin: 0;
+.origin-reach dt {
+    color: var(--muted);
+}
+.origin-reach dd {
+    margin: 6px 0 0;
     color: var(--text-secondary);
 }
-.origin-goal > span {
+.origin-empty-icon {
+    margin-bottom: 20px;
+    color: var(--accent);
+}
+.origin-start {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 48px;
+    font-size: 14px;
+}
+.origin-objective {
+    grid-column: 1 / -1;
+    margin: 0;
     color: var(--muted);
+    font-size: 12px;
+    text-align: center;
 }
 .result-outcome {
     margin: 0 0 16px;
@@ -247,6 +385,10 @@
     gap: 10px;
     width: 100%;
 }
+.result-actions {
+    display: grid;
+    gap: 10px;
+}
 @media (max-width: 700px) {
     .start-content {
         padding-top: 50px;
@@ -261,27 +403,43 @@
     .game-shell .entry-panel {
         padding: 24px 20px;
     }
-    .origin-panel .origin-options {
-        margin-top: 22px;
-        gap: 8px;
+    .origin-selection {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(240px, 1fr) auto auto;
+        gap: 16px;
+        padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+        overflow-y: auto;
     }
-    .origin-options button {
-        padding: 12px 14px;
+    .origin-heading h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
     }
-    .origin-goal {
-        margin-top: 20px;
-        padding-top: 16px;
+    .origin-marker-label {
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+    .origin-briefing {
+        align-self: stretch;
+        padding: 20px;
+    }
+    .origin-briefing-copy {
+        min-height: 160px;
+    }
+    .origin-briefing h2 {
+        margin-bottom: 6px;
+        font-size: 22px;
+    }
+    .origin-organization {
+        margin-bottom: 12px;
+    }
+    .origin-reach {
+        margin: 12px 0 16px;
     }
     .result-summary {
         gap: 10px;
     }
     .result-summary dd {
         font-size: 20px;
-    }
-}
-@media (max-width: 540px) {
-    .origin-panel .origin-options {
-        grid-template-columns: 1fr;
     }
 }
 @media (max-height: 600px) {

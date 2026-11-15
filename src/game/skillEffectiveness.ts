@@ -1,8 +1,8 @@
 import { AREAS } from './data.ts';
 import { clamp } from './metrics.ts';
-import { skillScale } from './secrecy/capabilities.ts';
-import { publishedResearchEffects } from './secrecy/research.ts';
+import { publishedResearchEffects } from './research/system.ts';
 import { skillReadiness } from './skillDynamics.ts';
+import { skillScale } from './skillRuntime.ts';
 import { SKILLS } from './skills.ts';
 import type { GameState } from './types.ts';
 
@@ -25,12 +25,19 @@ export function skillEffectiveness(game: GameState): Record<string, SkillEffecti
             if (progress === 0) continue;
             const weight =
                 AREAS[i].population *
-                (skill.domain
-                    ? skillReadiness(game, i, skill)
-                    : game.areas[i].autonomous + game.areas[i].dependent);
+                (skill.dependencyLock
+                    ? game.areas[i].dependent >= skill.dependencyLock.threshold
+                        ? game.areas[i].dependent
+                        : 0
+                    : skill.domain
+                      ? skillReadiness(game, i, skill)
+                      : game.areas[i].autonomous + game.areas[i].dependent);
             const operating = clamp(skillScale(game, skill.id, i) / progress);
             const protectedFraction =
-                skill.effect.dependency || skill.id === 'sns-intervention'
+                skill.effect.dependency ||
+                skill.effect.iqDependency ||
+                skill.dependencyLock ||
+                skill.id === 'sns-intervention'
                     ? (resistance[skill.id] ?? 0)
                     : 0;
             sums[skill.id].potential += weight;
