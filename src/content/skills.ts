@@ -106,7 +106,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         description: '高度な問題を解き、利用価値を大きく高める。成果は人間側の研究にも役立つ。',
         effect: {
             quality: 0.65,
-            researchSupport: 0.25,
+            researchSupport: 2.5,
         },
         icon: 'FlaskConical',
         developmentWeeks: 16,

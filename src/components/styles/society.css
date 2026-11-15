@@ -34,10 +34,6 @@
     color: var(--danger);
     background: #0d1a22cc;
 }
-.encounter-result > svg {
-    flex-shrink: 0;
-    margin-top: 3px;
-}
 .society-heading {
     display: flex;
     gap: 16px;
@@ -74,20 +70,6 @@
     align-items: center;
     gap: 14px;
 }
-.encounter-result {
-    display: flex;
-    gap: 10px;
-    padding: 16px;
-    background: #91d8de0a;
-    color: #bfdadd;
-    border-left: 2px solid #91d8de;
-}
-.encounter-result p {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.9;
-}
-
 @media (max-width: 800px) {
     .society-heading h2 {
         font-size: 17px;
@@ -161,14 +143,14 @@
     font-size: 12px;
 }
 .investigation-responses {
-    margin-top: 20px;
+    margin-top: 28px;
 }
 .investigation-responses-heading {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 9px;
+    margin-bottom: 12px;
 }
 .investigation-responses-heading h3 {
     margin: 0;
@@ -184,8 +166,8 @@
     align-items: flex-start;
     gap: 12px;
     width: 100%;
-    margin-top: 7px;
-    padding: 12px 14px;
+    margin-top: 9px;
+    padding: 14px 16px;
     text-align: left;
 }
 .investigation-choice > svg {
@@ -198,7 +180,7 @@
 }
 .investigation-choice-body {
     display: grid;
-    gap: 5px;
+    gap: 6px;
     min-width: 0;
     width: 100%;
 }
@@ -210,7 +192,8 @@
 }
 .investigation-choice-title strong {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1.7;
 }
 .investigation-choice-title small {
     color: var(--text-secondary);
@@ -218,24 +201,22 @@
     white-space: nowrap;
 }
 .investigation-choice-effects {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px 15px;
+    display: grid;
+    gap: 4px;
     color: var(--text-secondary);
-    font-size: 11px;
-}
-.investigation-choice-effects b {
-    color: var(--accent);
-    margin-left: 3px;
-    font-weight: 600;
-}
-.investigation-choice.pressure b {
-    color: var(--warning);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.7;
 }
 .investigation-choice-note {
     color: var(--muted);
     font-size: 10px;
     line-height: 1.5;
+}
+.investigation-choice-scaling {
+    margin-left: 8px;
+    color: var(--muted);
+    font-size: 10px;
 }
 .investigation-choice:disabled {
     opacity: 0.48;

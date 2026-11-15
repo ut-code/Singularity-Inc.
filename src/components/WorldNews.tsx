@@ -1,8 +1,9 @@
 import { ChevronRight, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { calendarParts } from '../game/calendar';
 import { worldNews } from '../game/society/news';
 import type { GameState } from '../game/types';
+import { SkillNavigationContext, SkillText } from './SkillText';
 import styles from './WorldNews.module.css';
 import { Modal } from './widgets';
 
@@ -14,6 +15,7 @@ function newsDate(week: number) {
 }
 
 export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
+    const openSkill = useContext(SkillNavigationContext)!;
     const articles = useMemo(() => worldNews(game), [game]);
     const received = useRef(new Set<string>());
     const [queue, setQueue] = useState<Headline[]>([]);
@@ -34,7 +36,12 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
     const current = queue[0];
     const article = articles.find((item) => item.id === selected);
     return (
-        <>
+        <SkillNavigationContext
+            value={(id) => {
+                setSelected(null);
+                openSkill(id);
+            }}
+        >
             <section className={styles.ticker} aria-label="ニュース" data-animation-speed={speed}>
                 <h2>ニュース</h2>
                 <div className={styles.window}>
@@ -51,7 +58,7 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                                 )
                             }
                         >
-                            {current.title}
+                            <SkillText>{current.title}</SkillText>
                         </p>
                     )}
                 </div>
@@ -89,8 +96,12 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                         <p className={styles.meta}>
                             {newsDate(article.week)} · {article.region}
                         </p>
-                        <h3>{article.title}</h3>
-                        <p>{article.summary}</p>
+                        <h3>
+                            <SkillText>{article.title}</SkillText>
+                        </h3>
+                        <p>
+                            <SkillText>{article.summary}</SkillText>
+                        </p>
                     </article>
                     {articles.length > 1 && (
                         <nav className={styles.archive} aria-label="これまでのニュース">
@@ -115,6 +126,6 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                     )}
                 </Modal>
             )}
-        </>
+        </SkillNavigationContext>
     );
 }

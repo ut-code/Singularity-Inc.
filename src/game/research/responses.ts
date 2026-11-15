@@ -10,6 +10,7 @@ import type { ResearchAction, ResearchProject } from './types.ts';
 
 export const RESPONSE_WEEKS = 12;
 export const COOPERATION_IMPACT_REDUCTION = 0.5;
+export const PRESSURE_TRUST_PENALTY = 0.15;
 export const RESPONSE_COST = { cooperate: 1, pressure: 2, stop: 0 } as const;
 export const RESPONSE_LABEL = {
     cooperate: '検証に協力',
@@ -84,6 +85,10 @@ export function publicationEffect(topic: ResearchTopic, project: ResearchProject
                 : undefined,
     };
 }
+/** 圧力による不信は、公表・成立時に一度だけ発生する。 */
+export function publicationTrustPenalty(project: ResearchProject) {
+    return project.response?.action === 'pressure' ? PRESSURE_TRUST_PENALTY : 0;
+}
 export function responseBlockReason(
     game: GameState,
     project: ResearchProject,
@@ -113,12 +118,7 @@ export function respondToResearch(game: GameState, id: string, action: ResearchA
                 ? {
                       ...area,
                       favorability: clamp(
-                          area.favorability +
-                              (action === 'cooperate' && safe
-                                  ? 0.03
-                                  : action === 'pressure'
-                                    ? -0.04
-                                    : 0),
+                          area.favorability + (action === 'cooperate' && safe ? 0.03 : 0),
                       ),
                   }
                 : area,

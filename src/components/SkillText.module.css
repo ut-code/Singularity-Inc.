@@ -1,0 +1,14 @@
+.skill {
+    display: inline;
+    padding: 0 3px;
+    margin: 0 2px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    vertical-align: baseline;
+    white-space: nowrap;
+    pointer-events: auto;
+}

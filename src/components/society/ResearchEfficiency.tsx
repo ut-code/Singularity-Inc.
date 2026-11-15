@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { SkillText } from '../SkillText';
 
 export function ResearchEfficiency({
     value,
@@ -19,7 +20,9 @@ export function ResearchEfficiency({
                 </span>
             </div>
             {modifiers.map((modifier) => (
-                <small key={modifier}>{modifier}適用中</small>
+                <small key={modifier}>
+                    <SkillText>{modifier}</SkillText>適用中
+                </small>
             ))}
         </div>
     );

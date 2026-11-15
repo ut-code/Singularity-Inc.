@@ -1,5 +1,6 @@
 import { useGameStore } from '../state/gameStore';
 import styles from './NotificationFeed.module.css';
+import { SkillText } from './SkillText';
 import { researchPresentation } from './society/researchPresentation';
 
 export function NotificationFeed({ speed }: { speed: number }) {
@@ -31,7 +32,9 @@ export function NotificationFeed({ speed }: { speed: number }) {
                                     aria-hidden="true"
                                 />
                             )}
-                            <span title={item.text}>{item.text}</span>
+                            <span title={item.text}>
+                                <SkillText>{item.text}</SkillText>
+                            </span>
                         </li>
                     );
                 })}

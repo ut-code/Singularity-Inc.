@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { calendarParts } from '../../game/calendar';
 import type { SocialPost } from '../../game/society/social';
 import { useGameStore } from '../../state/gameStore';
+import { SkillText } from '../SkillText';
 import styles from './SocietyPanel.module.css';
 
 function Post({ post }: { post: SocialPost }) {
@@ -30,7 +31,9 @@ function Post({ post }: { post: SocialPost }) {
                         {date.year}/{date.month}/{date.day}
                     </time>
                 </header>
-                <p>{post.text}</p>
+                <p>
+                    <SkillText>{post.text}</SkillText>
+                </p>
             </div>
         </article>
     );

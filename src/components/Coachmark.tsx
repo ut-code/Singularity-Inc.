@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { SkillText } from './SkillText';
 export interface CoachmarkPoint {
     x: number;
     y: number;
@@ -68,7 +69,9 @@ export function Coachmark({
                 top: Math.max(12, Math.min(window.innerHeight - height - 12, top)),
             }}
         >
-            <p>{text}</p>
+            <p>
+                <SkillText>{text}</SkillText>
+            </p>
             <button
                 type="button"
                 className="coachmark-close"

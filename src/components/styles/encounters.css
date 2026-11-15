@@ -2,69 +2,18 @@
     color: var(--muted);
     font-size: 9px;
 }
-/* 旧PRの会話・地域イベントの配置を再利用し、数値プレビューと分岐履歴を省く。 */
-.encounter-panel {
-    max-width: 620px;
-}
-.encounter-meta {
-    display: flex;
-    gap: 16px;
-    color: var(--muted);
-    font-size: 11px;
-    margin: 12px 0 18px;
-}
-.event-summary {
-    font-size: 13px;
-    line-height: 1.9;
-    color: var(--text-secondary);
-    margin: 18px 0;
-}
-.contact-avatar {
-    display: grid;
-    place-items: center;
-    width: 46px;
-    height: 46px;
-    flex-shrink: 0;
-    background: var(--surface-panel);
-    color: var(--accent);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-control);
-    font-size: 16px;
-}
 fieldset.encounter-choices {
     display: grid;
-    gap: 10px;
     border: 0;
-    margin: 20px 0 0;
+    margin: 28px 0 0;
     padding: 0;
     min-width: 0;
 }
-.encounter-choices > button {
-    text-align: left;
-    padding: 15px;
-    border-radius: var(--radius-control);
-}
-.encounter-choices > button > div {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-}
-.encounter-choices strong {
+.encounter-choices > legend {
+    margin-bottom: 0;
+    padding: 0;
     font-size: 13px;
     font-weight: 500;
-    line-height: 1.8;
-}
-.encounter-choices > :where(button) > small {
-    display: block;
-    margin-top: 6px;
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 600;
-}
-.encounter-choice-effects > span {
-    display: block;
-    line-height: 1.8;
 }
 .encounter-result {
     display: flex;
@@ -72,9 +21,10 @@ fieldset.encounter-choices {
     gap: 10px;
     padding: 16px;
     margin-top: 20px;
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    background: var(--surface-control);
     color: var(--text-secondary);
-    border-left: 2px solid var(--accent);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
 }
 .encounter-result svg {
     flex-shrink: 0;
@@ -97,7 +47,7 @@ fieldset.encounter-choices {
 .conversation-message.contact {
     padding: 12px 16px;
     border: 1px solid var(--line);
-    border-radius: 16px;
+    border-radius: var(--radius-control);
     background: var(--surface-panel);
 }
 .conversation-message > small {
@@ -106,13 +56,9 @@ fieldset.encounter-choices {
 }
 .conversation-message p {
     font-size: 13px;
-    line-height: 1.95;
+    line-height: 1.7;
     margin: 0;
     color: var(--text-secondary);
-}
-.conversation-panel .encounter-choices {
-    border-top: 1px solid var(--line);
-    padding-top: 18px;
 }
 .region-constraints {
     display: flex;

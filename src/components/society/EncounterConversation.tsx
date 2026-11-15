@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import type { ChatDefinition, EncounterState } from '../../game/society/types';
+import { SkillText } from '../SkillText';
 import { type ConversationMessage, useConversationPlayback } from './useConversationPlayback';
 
 export function EncounterConversation({
@@ -33,14 +34,18 @@ export function EncounterConversation({
                 message.role === 'system' ? (
                     <div className="encounter-result" key={message.id}>
                         <Check size={17} />
-                        <p>{message.text}</p>
+                        <p>
+                            <SkillText>{message.text}</SkillText>
+                        </p>
                     </div>
                 ) : (
                     <article className={`conversation-message ${message.role}`} key={message.id}>
                         <small>
                             {message.role === 'player' ? 'あなた' : definition.contact!.name}
                         </small>
-                        <p>{message.text}</p>
+                        <p>
+                            <SkillText>{message.text}</SkillText>
+                        </p>
                     </article>
                 ),
             )}
@@ -48,7 +53,7 @@ export function EncounterConversation({
                 <article className="conversation-message player" aria-label="あなた、返信を生成中">
                     <small>あなた</small>
                     <p>
-                        {playback.streamingText}
+                        <SkillText>{playback.streamingText}</SkillText>
                         <span className="conversation-cursor" aria-hidden="true" />
                     </p>
                 </article>

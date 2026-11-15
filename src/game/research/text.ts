@@ -1,6 +1,6 @@
 import type { ResearchTopic } from '../../content/research.ts';
 import { SKILLS } from '../skills.ts';
-import { publicationEffect } from './responses.ts';
+import { publicationEffect, publicationTrustPenalty } from './responses.ts';
 import type { ResearchProject } from './types.ts';
 
 const percent = (value: number) => `${Number((value * 100).toFixed(2))}%`;
@@ -15,7 +15,11 @@ export function researchEffectGroups(topic: ResearchTopic, project?: ResearchPro
         publication.push(
             instant.trust < 0
                 ? `残っている信頼の${percent(-instant.trust)}を失う`
-                : `信頼度 +${Math.round(instant.trust * 100)}`,
+                : `信頼度 +${Math.round(instant.trust * 100)}pt`,
+        );
+    if (project && publicationTrustPenalty(project))
+        publication.push(
+            `圧力への反発で信頼度 −${Math.round(publicationTrustPenalty(project) * 100)}pt`,
         );
     if (topic.suppression)
         for (const id of topic.targets) {

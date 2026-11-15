@@ -2,6 +2,7 @@ import { Network, X } from 'lucide-react';
 import { useState } from 'react';
 import { SKILLS } from '../../game/skills';
 import type { GameState } from '../../game/types';
+import { SkillNavigationContext } from '../SkillText';
 import { SkillDetails } from './SkillDetails';
 import { SkillTreeMap } from './SkillTreeMap';
 
@@ -44,7 +45,9 @@ export function SkillTreePanel({
             </header>
             <div className="research-layout">
                 <SkillTreeMap game={game} selectedId={selected} onSelect={setSelected} />
-                <SkillDetails game={game} skill={skill} onResearch={onResearch} />
+                <SkillNavigationContext value={setSelected}>
+                    <SkillDetails game={game} skill={skill} onResearch={onResearch} />
+                </SkillNavigationContext>
             </div>
         </section>
     );

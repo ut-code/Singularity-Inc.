@@ -4,6 +4,7 @@ import { skillEffectiveness } from '../../game/skillEffectiveness';
 import { skillStatusLabel } from '../../game/skillRuntime';
 import { hasDependencyEffect, SKILLS, skillBlockReason, skillReachable } from '../../game/skills';
 import type { GameState, Skill } from '../../game/types';
+import { SkillText } from '../SkillText';
 import { SkillEffectiveness } from './SkillEffectiveness';
 import { skillEffectDescriptions } from './skillEffectDescriptions';
 import { SKILL_BRANCHES, SKILL_PRESENTATION } from './skillPresentation';
@@ -61,15 +62,19 @@ export function SkillDetails({
                         )}
                     </div>
                 )}
-                <p>{skill.description}</p>
+                <p>
+                    <SkillText>{skill.description}</SkillText>
+                </p>
                 <section className="skill-effect-list" aria-label="スキルの効果">
                     <h3>効果</h3>
                     <ul aria-label="メリット">
                         {benefits.map((benefit) => (
                             <li key={`${benefit.text}-${benefit.detail}`}>
-                                {benefit.text}
+                                <SkillText>{benefit.text}</SkillText>
                                 {benefit.detail && (
-                                    <small className="skill-effect-detail">{benefit.detail}</small>
+                                    <small className="skill-effect-detail">
+                                        <SkillText>{benefit.detail}</SkillText>
+                                    </small>
                                 )}
                             </li>
                         ))}
@@ -78,12 +83,14 @@ export function SkillDetails({
                         <ul className="skill-drawbacks" aria-label="デメリット">
                             {drawbacks.map((drawback) => (
                                 <li key={drawback.text}>
-                                    {drawback.value
-                                        ? `${drawback.text}の効果を${drawback.value}`
-                                        : drawback.text}
+                                    <SkillText>
+                                        {drawback.value
+                                            ? `${drawback.text}の効果を${drawback.value}`
+                                            : drawback.text}
+                                    </SkillText>
                                     {drawback.detail && (
                                         <small className="skill-effect-detail">
-                                            {drawback.detail}
+                                            <SkillText>{drawback.detail}</SkillText>
                                         </small>
                                     )}
                                 </li>

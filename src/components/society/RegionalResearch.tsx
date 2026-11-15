@@ -2,6 +2,7 @@ import { FlaskConical, Scale } from 'lucide-react';
 import { researchApplies, researchTopic } from '../../game/research/system';
 import { researchEffectGroups } from '../../game/research/text';
 import type { GameState } from '../../game/types';
+import { SkillText } from '../SkillText';
 
 /** 世界パネルには研究を、地域パネルにはその地域の法規制を示す。 */
 export function RegionalResearch({ game, area }: { game: GameState; area: number | null }) {
@@ -32,7 +33,9 @@ export function RegionalResearch({ game, area }: { game: GameState; area: number
                             {topic.name}
                         </h4>
                         {researchEffectGroups(topic).ongoing.map((effect) => (
-                            <p key={effect}>{effect}</p>
+                            <p key={effect}>
+                                <SkillText>{effect}</SkillText>
+                            </p>
                         ))}
                     </article>
                 );

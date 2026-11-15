@@ -1,4 +1,5 @@
 import type { SkillEffectiveness as Effectiveness } from '../../game/skillEffectiveness';
+import { SkillText } from '../SkillText';
 
 export function SkillEffectiveness({
     value,
@@ -37,7 +38,7 @@ export function SkillEffectiveness({
                         自分の制限 <b>−{decision}%</b>
                         {restraintNames.length > 0 && (
                             <small className="skill-restriction-source">
-                                （{restraintNames.join('、')}）
+                                <SkillText>{restraintNames.join('、')}</SkillText>
                             </small>
                         )}
                     </span>

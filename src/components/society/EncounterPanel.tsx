@@ -1,10 +1,11 @@
-import { CalendarDays, Check, MessageSquare, X } from 'lucide-react';
+import { Check, CircleAlert, MessageSquare } from 'lucide-react';
 import { AREAS } from '../../game/data';
 import { encounterDefinition } from '../../game/society/encounters';
 import type { GameState } from '../../game/types';
 import { useGameStore } from '../../state/gameStore';
-import { Modal } from '../widgets';
+import { SkillText } from '../SkillText';
 import { EncounterConversation } from './EncounterConversation';
+import { IncidentPanelFrame } from './IncidentPanelFrame';
 
 export function EncounterPanel({
     game,
@@ -19,77 +20,55 @@ export function EncounterPanel({
     const definition = encounterDefinition(encounter);
     const area = AREAS[encounter.area];
     const chat = definition.kind === 'chat';
-    const Icon = chat ? MessageSquare : CalendarDays;
+    const Icon = chat ? MessageSquare : CircleAlert;
     return (
-        <Modal modal={false} label={definition.title} onClose={onClose} mapLocation={area}>
-            <div className={`encounter-panel ${chat ? 'conversation-panel' : ''}`}>
-                <div className="society-heading">
-                    <div className="contact-heading">
-                        {chat ? (
-                            <span className="contact-avatar">{definition.contact!.initials}</span>
-                        ) : (
-                            <Icon size={26} />
-                        )}
-                        <div>
-                            <span className="eyebrow">
-                                {chat ? definition.contact!.role : area.name}
-                            </span>
-                            <h2>{chat ? definition.contact!.name : definition.title}</h2>
-                        </div>
+        <IncidentPanelFrame
+            title={definition.title}
+            showTitle={!chat}
+            heading={chat ? definition.contact!.name : area.name}
+            label={chat ? `チャット · ${definition.contact!.role}` : 'イベント'}
+            description={chat ? undefined : definition.summary}
+            Icon={Icon}
+            color={chat ? 'var(--text-secondary)' : 'var(--danger)'}
+            mapLocation={area}
+            onClose={onClose}
+        >
+            {chat ? (
+                <EncounterConversation definition={definition} encounter={encounter} />
+            ) : (
+                <p className="investigation-question">期限に利用拒否が増え、信頼が低下</p>
+            )}
+            {encounter.choiceId ? (
+                !chat && (
+                    <div className="encounter-result">
+                        <Check size={17} />
+                        <p>
+                            <SkillText>{encounter.result!}</SkillText>
+                        </p>
                     </div>
-                    <button
-                        type="button"
-                        className="icon-button"
-                        aria-label="閉じる"
-                        onClick={onClose}
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
-                <div className="encounter-meta">
-                    {area.name}
-                    <span>
-                        {game.week < encounter.deadline && (!chat || encounter.status === 'pending')
-                            ? `残り${encounter.deadline - game.week}週`
-                            : encounter.choiceId
-                              ? '対応済み'
-                              : '期限終了'}
-                    </span>
-                </div>
-                {chat ? (
-                    <EncounterConversation definition={definition} encounter={encounter} />
-                ) : (
-                    <div>
-                        <p className="event-summary">{definition.summary}</p>
-                        <small className="encounter-risk">期限に利用拒否が増え、信頼が低下</small>
-                    </div>
-                )}
-                {encounter.choiceId ? (
-                    !chat && (
-                        <div className="encounter-result">
-                            <Check size={17} />
-                            <p>{encounter.result}</p>
-                        </div>
-                    )
-                ) : encounter.status === 'pending' ? (
-                    <fieldset
-                        className="encounter-choices"
-                        aria-label={chat ? '返信を選ぶ' : '対応を選ぶ'}
-                    >
-                        {definition.choices.map((choice) => {
-                            return (
-                                <button
-                                    type="button"
-                                    key={choice.id}
-                                    disabled={game.skillPoints < choice.cost}
-                                    onClick={() =>
-                                        useGameStore.getState().choose(encounter.id, choice.id)
-                                    }
-                                >
-                                    <div>
+                )
+            ) : encounter.status === 'pending' ? (
+                <fieldset
+                    className="encounter-choices"
+                    aria-label={chat ? '返信を選ぶ' : '対応を選ぶ'}
+                >
+                    <legend>{chat ? '返信を選ぶ' : '対応を選ぶ'}</legend>
+                    {definition.choices.map((choice) => {
+                        return (
+                            <button
+                                type="button"
+                                className="investigation-choice"
+                                key={choice.id}
+                                disabled={game.skillPoints < choice.cost}
+                                onClick={() =>
+                                    useGameStore.getState().choose(encounter.id, choice.id)
+                                }
+                            >
+                                <span className="investigation-choice-body">
+                                    <span className="investigation-choice-title">
                                         <strong>{choice.label}</strong>
-                                    </div>
-                                    <small className="encounter-choice-effects">
+                                    </span>
+                                    <span className="investigation-choice-effects">
                                         {'mitigation' in choice ? (
                                             <>
                                                 <span>
@@ -125,13 +104,13 @@ export function EncounterPanel({
                                                 {(choice.trust ?? 0) < 0 ? ' · 不信のリスク' : ''}
                                             </>
                                         )}
-                                    </small>
-                                </button>
-                            );
-                        })}
-                    </fieldset>
-                ) : null}
-            </div>
-        </Modal>
+                                    </span>
+                                </span>
+                            </button>
+                        );
+                    })}
+                </fieldset>
+            ) : null}
+        </IncidentPanelFrame>
     );
 }

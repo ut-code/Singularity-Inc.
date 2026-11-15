@@ -14,7 +14,12 @@ import { activeSkillEffects, INTENT_REFUSAL_PRESSURE, skillScale } from '../skil
 import { SKILLS } from '../skills.ts';
 import type { GameState } from '../types.ts';
 import { instituteArea } from './locations.ts';
-import { publicationEffect, responseAreas, responseResearchMultiplier } from './responses.ts';
+import {
+    publicationEffect,
+    publicationTrustPenalty,
+    responseAreas,
+    responseResearchMultiplier,
+} from './responses.ts';
 import { researchEffectGroups } from './text.ts';
 import type { ResearchProject } from './types.ts';
 
@@ -126,7 +131,8 @@ function publish(game: GameState, project: ResearchProject): GameState {
             dependent: area.dependent - recovered,
             antiAI: area.antiAI + rejected - reconciled,
             favorability: clamp(
-                trust < 0 ? area.favorability * (1 + trust) : area.favorability + trust,
+                (trust < 0 ? area.favorability * (1 + trust) : area.favorability + trust) -
+                    publicationTrustPenalty(project),
             ),
         };
     });

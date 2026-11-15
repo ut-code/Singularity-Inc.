@@ -1,12 +1,15 @@
 import { Handshake, Pause, TriangleAlert } from 'lucide-react';
 import {
     COOPERATION_IMPACT_REDUCTION,
+    PRESSURE_TRUST_PENALTY,
     RESPONSE_COST,
     RESPONSE_LABEL,
+    RESPONSE_WEEKS,
     respondToResearch,
     responseActive,
     responseAvailable,
     responseBlockReason,
+    responseResearchMultiplier,
 } from '../../game/research/responses';
 import { researchRate, researchTopic } from '../../game/research/system';
 import type { ResearchProject } from '../../game/research/types';
@@ -23,6 +26,9 @@ export function ResearchResponses({
     project: ResearchProject;
     onClose: () => void;
 }) {
+    const isLaw = researchTopic(project).category === 'regulation';
+    const completion = isLaw ? '成立時' : '公表時';
+    const scope = isLaw ? '地域' : '世界';
     if (project.response) {
         const Icon = icons[project.response.action];
         return (
@@ -35,10 +41,13 @@ export function ResearchResponses({
                     <strong>{RESPONSE_LABEL[project.response.action]}</strong>
                     <small>
                         {responseActive(game, project)
-                            ? `残り${project.response.untilWeek - game.week}週`
+                            ? `残り${project.response.untilWeek - game.week}週${project.response.action === 'pressure' ? `／${completion}に信頼度 −${PRESSURE_TRUST_PENALTY * 100}pt` : ''}`
                             : project.response.action === 'cooperate' && project.status === 'active'
-                              ? '公表時の軽減を適用中'
-                              : '対応済み'}
+                              ? `${completion}の軽減を適用中`
+                              : project.response.action === 'pressure' &&
+                                  project.status === 'active'
+                                ? `${completion}に信頼度 −${PRESSURE_TRUST_PENALTY * 100}pt`
+                                : '対応済み'}
                     </small>
                 </div>
             </div>
@@ -52,8 +61,7 @@ export function ResearchResponses({
     return (
         <section className="investigation-responses" aria-label="研究への対応">
             <div className="investigation-responses-heading">
-                <h3>対応を選ぶ</h3>
-                <small>一度だけ</small>
+                <h3>対応を選ぶ（任意）</h3>
             </div>
             {actions.map((action) => {
                 const reason = responseBlockReason(game, project, action);
@@ -64,9 +72,19 @@ export function ResearchResponses({
                 );
                 const next = preview.researchProjects.find((item) => item.id === project.id)!;
                 const baseline = researchRate(game, project);
-                const change = baseline > 0 ? researchRate(preview, next) / baseline - 1 : 0;
-                const degree =
-                    Math.abs(change) >= 0.25 ? '大' : Math.abs(change) >= 0.08 ? '中' : '小';
+                const change =
+                    action === 'pressure'
+                        ? responseResearchMultiplier(game, {
+                              ...project,
+                              response: {
+                                  action,
+                                  untilWeek: game.week + RESPONSE_WEEKS,
+                                  skillIds: [],
+                              },
+                          }) - 1
+                        : baseline > 0
+                          ? researchRate(preview, next) / baseline - 1
+                          : 0;
                 const Icon = icons[action];
                 return (
                     <button
@@ -87,34 +105,26 @@ export function ResearchResponses({
                             </span>
                             <span className="investigation-choice-effects">
                                 <span>
-                                    研究速度{' '}
-                                    <b>
-                                        {change > 0 ? '上昇' : '低下'} {degree}
-                                    </b>
+                                    研究速度 {change > 0 ? '+' : '−'}
+                                    {Math.round(Math.abs(change) * 100)}%
+                                    {action === 'pressure' && (
+                                        <small className="investigation-choice-scaling">
+                                            依存率に応じて上昇
+                                        </small>
+                                    )}
+                                    {action === 'cooperate' && '、信頼度 +3pt'}
                                 </span>
-                                {action === 'stop' ? (
-                                    <span>
-                                        対象機能 <b>停止</b>
-                                    </span>
-                                ) : action === 'cooperate' ? (
-                                    <span>
-                                        公表時の信頼低下・拒否増加{' '}
-                                        <b>{Math.round(COOPERATION_IMPACT_REDUCTION * 100)}%軽減</b>
-                                    </span>
-                                ) : (
-                                    <span>
-                                        信頼 <b>低下</b>
-                                    </span>
-                                )}
+                                <span>
+                                    {action === 'stop'
+                                        ? `対象機能を${RESPONSE_WEEKS}週停止`
+                                        : action === 'cooperate'
+                                          ? `${completion}の信頼低下・利用拒否増加を${Math.round(COOPERATION_IMPACT_REDUCTION * 100)}%軽減`
+                                          : `${completion}に${scope}の信頼度 −${PRESSURE_TRUST_PENALTY * 100}pt`}
+                                </span>
                             </span>
-                            <small className="investigation-choice-note">
-                                {reason ??
-                                    (action === 'stop'
-                                        ? '12週、対象機能を止めて研究を遅らせます。'
-                                        : action === 'pressure'
-                                          ? '12週、研究を遅らせますが、不信が強まります。'
-                                          : '信頼+3。研究速度は12週上昇し、継続効果は軽減しません。')}
-                            </small>
+                            {reason && (
+                                <small className="investigation-choice-note">{reason}</small>
+                            )}
                         </span>
                     </button>
                 );
