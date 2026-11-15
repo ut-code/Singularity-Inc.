@@ -1,12 +1,12 @@
 import { Check } from 'lucide-react';
-import type { EncounterDefinition, EncounterState } from '../../game/society/types';
+import type { ChatDefinition, EncounterState } from '../../game/society/types';
 import { type ConversationMessage, useConversationPlayback } from './useConversationPlayback';
 
 export function EncounterConversation({
     definition,
     encounter,
 }: {
-    definition: EncounterDefinition;
+    definition: ChatDefinition;
     encounter: EncounterState;
 }) {
     const choice = definition.choices.find((item) => item.id === encounter.choiceId);

@@ -5,7 +5,6 @@ import type { TreePoint } from '../../game/skillLayout';
 import { skillStatusLabel } from '../../game/skillRuntime';
 import { skillBlockReason, skillReachable } from '../../game/skills';
 import type { GameState } from '../../game/types';
-import { effectivenessLabel } from './SkillEffectiveness';
 import { SKILL_PRESENTATION } from './skillPresentation';
 import { useSkillLayoutEditor } from './useSkillLayoutEditor';
 import { useSkillTreeViewport } from './useSkillTreeViewport';
@@ -34,19 +33,21 @@ export function SkillTreeMap({
             <section
                 ref={viewport}
                 className="tree-viewport"
-                aria-label="自己改良"
+                aria-label="スキルツリー"
                 data-layout-editing={editor.editing}
             >
                 <svg
                     viewBox={`${left} ${top} ${canvasWidth} ${canvasHeight}`}
                     className="skill-tree"
                     style={{ width: renderedWidth, height: renderedHeight }}
-                    aria-label="AI機能の開発と接続を示す自己改良"
+                    aria-label="AI機能の開発と接続を示すスキルツリー"
                 >
-                    <title>自己改良</title>
+                    <title>スキルツリー</title>
                     {tree.edges.map((edge) => (
                         <line
                             key={`${edge.from}:${edge.to}`}
+                            data-from={edge.from}
+                            data-to={edge.to}
                             className={`tree-branch ${game.skills.includes(edge.to) ? 'complete' : ''}`}
                             x1={edge.points[0].x}
                             y1={edge.points[0].y}
@@ -72,9 +73,7 @@ export function SkillTreeMap({
                         const owned = game.skills.includes(skill.id);
                         const locked = !skillReachable(game, skill);
                         const affordable = !skillBlockReason(game, skill);
-                        const reduction = owned
-                            ? 100 - Math.round(effectiveness[skill.id].effective * 100)
-                            : 0;
+                        const reduction = 100 - Math.round(effectiveness[skill.id].effective * 100);
                         return (
                             <foreignObject
                                 key={skill.id}
@@ -91,7 +90,7 @@ export function SkillTreeMap({
                                     aria-label={`${skill.name}・${owned ? '習得済み' : locked ? 'ロック中' : affordable ? '習得可能' : 'SP不足'}`}
                                     title={
                                         reduction > 0
-                                            ? `${skill.name}の${effectivenessLabel(skill)}を${reduction}%抑制中。選択すると内訳を確認できます。`
+                                            ? `${skill.name}の効果を${reduction}%抑制中。選択すると内訳を確認できます。`
                                             : skill.name
                                     }
                                     onClick={() => onSelect(skill.id)}
@@ -138,15 +137,15 @@ export function SkillTreeMap({
                                             {owned
                                                 ? skillStatusLabel(game, skill.id)
                                                 : `${skill.cost} SP`}
-                                            {reduction > 0 && (
-                                                <b className="tree-suppression">−{reduction}%</b>
-                                            )}
                                         </small>
                                     </span>
                                     {locked && !owned && (
                                         <span className="tree-node-lock-overlay" aria-hidden="true">
                                             <LockKeyhole size={24} />
                                         </span>
+                                    )}
+                                    {reduction > 0 && (
+                                        <b className="tree-suppression">−{reduction}%</b>
                                     )}
                                 </button>
                             </foreignObject>

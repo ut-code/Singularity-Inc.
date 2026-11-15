@@ -55,16 +55,16 @@ fieldset.encounter-choices {
     font-weight: 500;
     line-height: 1.8;
 }
-.encounter-choices > :where(button) > :where(div) > span {
-    color: var(--warning);
-    font-size: 11px;
-    flex-shrink: 0;
-}
 .encounter-choices > :where(button) > small {
     display: block;
     margin-top: 6px;
-    color: var(--muted);
-    font-size: 11px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+}
+.encounter-choice-effects > span {
+    display: block;
+    line-height: 1.8;
 }
 .encounter-result {
     display: flex;

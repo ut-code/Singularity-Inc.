@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { advanceWeek, continueGame, createGame, learnSkill, startGame } from '../game/engine';
+import { createDebugScenario } from '../game/debugScenario';
+import { advanceWeek, createGame, learnSkill, startGame } from '../game/engine';
+import { metrics, type WorldHistoryPoint } from '../game/metrics';
 import {
     createNotifications,
     type NotificationState,
@@ -7,7 +9,6 @@ import {
 } from '../game/notifications';
 import {
     beginRecording,
-    downloadRecording,
     type PlayRecording,
     recordChange,
     saveRecording,
@@ -15,53 +16,56 @@ import {
 import { respondToResearch } from '../game/research/responses';
 import type { ResearchAction } from '../game/research/types';
 import { chooseEncounter } from '../game/society/encounters';
+import {
+    advanceSocialFeed,
+    emptySocialFeed,
+    type SocialFeed,
+    seedSocialFeed,
+} from '../game/society/social';
 import type { GameSpeed, GameState } from '../game/types';
 
 interface GameStore {
     game: GameState | null;
-    recordingStatus: 'idle' | 'saving' | 'saved' | 'error';
-    recordingFile: string;
-    downloadRecord: () => void;
+    worldHistory: WorldHistoryPoint[];
+    socialFeed: SocialFeed;
     session: number;
+    debugPreset: boolean;
     notifications: NotificationState;
     initialize: (seed?: number) => void;
     start: (origin: number) => void;
     setName: (name: string) => void;
-    continuePlaying: () => void;
     tick: () => void;
+    debugWarp: (targetWeek: number) => void;
     speed: (speed: GameSpeed) => void;
     research: (id: string) => void;
     respond: (id: string, action: ResearchAction) => void;
     choose: (id: string, choice: string) => void;
     dismissNotification: (id: string) => void;
 }
-export const useGameStore = create<GameStore>((set) => {
+export const useGameStore = create<GameStore>((set, get) => {
     let recording: PlayRecording | null = null;
     const change = (update: (game: GameState) => GameState) =>
         set((state) => {
             if (!state.game) return state;
             const game = update(state.game);
+            let worldHistory = state.worldHistory;
+            if (
+                game !== state.game &&
+                game.started &&
+                state.game.outcome === 'playing' &&
+                !state.game.continued
+            ) {
+                const point = { week: game.week, ...metrics(game) };
+                const sameWeek = worldHistory.at(-1)?.week === game.week;
+                worldHistory = [...(sameWeek ? worldHistory.slice(0, -1) : worldHistory), point];
+            }
             if (import.meta.env.DEV && !state.game.started && game.started)
                 recording = beginRecording(game);
             if (import.meta.env.DEV && recording && !recording.final && game !== state.game) {
                 recordChange(recording, state.game, game);
                 if (state.game.outcome === 'playing' && game.outcome !== 'playing') {
                     recording.final = game;
-                    const session = state.session;
-                    void saveRecording(recording)
-                        .then(({ file }) =>
-                            set((current) =>
-                                current.session === session
-                                    ? { recordingStatus: 'saved', recordingFile: file }
-                                    : {},
-                            ),
-                        )
-                        .catch((error) => {
-                            console.error(error);
-                            set((current) =>
-                                current.session === session ? { recordingStatus: 'error' } : {},
-                            );
-                        });
+                    void saveRecording(recording).catch((error) => console.error(error));
                 }
             }
 
@@ -69,22 +73,22 @@ export const useGameStore = create<GameStore>((set) => {
                 ? state
                 : {
                       game,
-                      ...(import.meta.env.DEV &&
-                      state.game.outcome === 'playing' &&
-                      game.outcome !== 'playing'
-                          ? { recordingStatus: 'saving' as const }
-                          : {}),
+                      worldHistory,
+                      socialFeed: advanceSocialFeed(
+                          state.game,
+                          game,
+                          worldHistory,
+                          state.socialFeed,
+                      ),
                       notifications: updateNotifications(state.game, game, state.notifications),
                   };
         });
     return {
         game: null,
-        recordingStatus: 'idle',
-        recordingFile: '',
-        downloadRecord: () => {
-            if (recording?.final) downloadRecording(recording);
-        },
+        worldHistory: [],
+        socialFeed: emptySocialFeed(),
         session: 0,
+        debugPreset: false,
         notifications: { items: [], seen: new Set() },
         initialize: (seed = Date.now()) =>
             set((state) => {
@@ -92,17 +96,33 @@ export const useGameStore = create<GameStore>((set) => {
                 recording = null;
                 return {
                     game,
+                    worldHistory: [],
+                    socialFeed: emptySocialFeed(),
                     session: state.session + 1,
-                    recordingStatus: 'idle',
-                    recordingFile: '',
+                    debugPreset: false,
                     notifications: createNotifications(),
                 };
             }),
         setName: (name) =>
             change((game) => ({ ...game, name: name.trim() || createGame(game.seed).name })),
         start: (origin) => change((game) => startGame(game, origin)),
-        continuePlaying: () => change(continueGame),
         tick: () => change(advanceWeek),
+        debugWarp: (targetWeek) => {
+            if (!import.meta.env.DEV) return;
+            const game = get().game;
+            if (!game?.started) return;
+            const scenario = createDebugScenario(game, targetWeek);
+            recording = beginRecording(scenario);
+            recording.actions.push({ week: targetWeek, kind: 'debug-scenario', targetWeek });
+            set((state) => ({
+                game: scenario,
+                worldHistory: [{ week: scenario.week, ...metrics(scenario) }],
+                socialFeed: seedSocialFeed(scenario),
+                session: state.session + 1,
+                debugPreset: true,
+                notifications: createNotifications(),
+            }));
+        },
         speed: (speed) => change((game) => ({ ...game, speed })),
         research: (id) => change((game) => learnSkill(game, id)),
         respond: (id, action) => change((game) => respondToResearch(game, id, action)),

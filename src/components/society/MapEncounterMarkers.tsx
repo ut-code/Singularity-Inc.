@@ -45,15 +45,17 @@ export function MapEncounterMarkers({
                           Icon: MessageSquare,
                           label: encounter.kind === 'chat' ? '人物からの連絡' : 'イベント',
                           color: encounter.kind === 'chat' ? '#c7d2db' : 'var(--danger)',
+                          severity: 'normal',
                       };
-                const { Icon, label, color } = presentation;
+                const { Icon, label, color, severity } = presentation;
                 return (
                     <button
                         type="button"
                         key={encounter.id}
                         className={`map-encounter-marker ${encounter.kind}`}
                         data-encounter-id={encounter.id}
-                        data-critical={label === '重要研究'}
+                        data-critical={severity !== 'normal'}
+                        data-severity={severity}
                         style={{ left: point.x, top: point.y }}
                         aria-label={`${label}：${encounter.title}`}
                         title={encounter.title}

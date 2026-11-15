@@ -84,6 +84,35 @@ export function GameClock({ blocked }: { blocked: boolean }) {
                     ))}
                 </div>
             </div>
+            {import.meta.env.DEV && isGameActive(game) && (
+                <fieldset className="debug-warp-controls" aria-label="デバッグ用の時間スキップ">
+                    <small>DEBUG</small>
+                    {(
+                        [
+                            { label: '中盤へ', minutes: 4 },
+                            { label: '終盤へ', minutes: 6 },
+                        ] as const
+                    ).map(({ label, minutes }) => {
+                        const targetWeek = Math.ceil((minutes * 60_000) / WEEK_MS);
+                        return (
+                            <button
+                                type="button"
+                                key={minutes}
+                                title={`${label}の検証状態へ切り替えます。スキル開発・普及・研究も進んだ状態になります。`}
+                                onClick={() => {
+                                    elapsed.current = 0;
+                                    setFraction(0);
+                                    usePresentationClock.setState({ fraction: 0 });
+                                    useGameStore.getState().debugWarp(targetWeek);
+                                }}
+                            >
+                                {label}
+                                <small>{minutes}分</small>
+                            </button>
+                        );
+                    })}
+                </fieldset>
+            )}
         </section>
     );
 }

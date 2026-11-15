@@ -14,6 +14,7 @@
     --branch-system: #baa0f0;
     --warning: #e4b565;
     --danger: #ff6a73;
+    --alert-color: var(--danger);
     --change-up: #7ee8b0;
     --change-down: #ff9292;
     --surface-page: #101820;

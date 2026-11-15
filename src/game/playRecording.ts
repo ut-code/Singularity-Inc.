@@ -65,8 +65,8 @@ export function recordChange(record: PlayRecording, before: GameState, after: Ga
             });
     for (const event of after.encounters)
         if (
-            event.status === 'resolved' &&
-            before.encounters.find((e) => e.id === event.id)?.status !== 'resolved'
+            event.choiceId !== undefined &&
+            before.encounters.find((e) => e.id === event.id)?.choiceId === undefined
         )
             record.actions.push({
                 week: after.week,
@@ -89,14 +89,4 @@ export async function saveRecording(record: PlayRecording) {
     });
     if (!response.ok) throw new Error(await response.text());
     return (await response.json()) as { file: string };
-}
-export function downloadRecording(record: PlayRecording) {
-    const url = URL.createObjectURL(
-        new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' }),
-    );
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `play-${record.seed}-${record.final!.outcome}.json`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
 }

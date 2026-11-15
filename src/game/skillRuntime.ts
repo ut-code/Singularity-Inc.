@@ -1,10 +1,13 @@
+import { AREAS, WORLD_POPULATION } from './data.ts';
 import { clamp } from './metrics.ts';
 import { operationScale, responseActive } from './research/responses.ts';
+import { publishedResearchEffects } from './research/system.ts';
 import { SKILLS } from './skills.ts';
 import type { AreaDefinition, GameState, SkillEffect } from './types.ts';
 
 const RESTRAINT_SKILLS = SKILLS.filter((skill) => skill.restrains);
 const EMPTY_EFFECTS: Required<SkillEffect> = {
+    researchDelay: 0,
     researchInsight: 0,
     iqDependency: 0,
     spread: 0,
@@ -21,8 +24,25 @@ const EMPTY_EFFECTS: Required<SkillEffect> = {
     reconciliation: 0,
 };
 const EFFECT_KEYS = Object.keys(EMPTY_EFFECTS) as (keyof SkillEffect)[];
-const commonEffects = new WeakMap<GameState, Required<SkillEffect>>();
+const commonEffects = new WeakMap<GameState, Map<number | undefined, Required<SkillEffect>>>();
+const regionalRestrictions = new WeakMap<GameState, boolean>();
+
+function hasRegionalRestrictions(game: GameState) {
+    let regional = regionalRestrictions.get(game);
+    if (regional === undefined) {
+        regional = game.researchProjects.some(
+            (project) =>
+                project.jurisdiction &&
+                (project.status === 'published' ||
+                    (project.response?.action === 'stop' && responseActive(game, project))),
+        );
+        regionalRestrictions.set(game, regional);
+    }
+    return regional;
+}
 export const INTENT_REFUSAL_PRESSURE = 0.1;
+export const SNS_REFUSAL_REDUCTION = 0.7;
+export const SNS_RECONCILIATION = 0.064;
 
 export function skillStatusLabel(game: GameState, id: string) {
     const progress = game.developmentProgress[id];
@@ -55,12 +75,36 @@ export function publicAuthorityStrength(game: GameState, index?: number) {
 export function intentReaction(game: GameState, index?: number) {
     return 0.35 + 0.65 * clamp(publicAuthorityStrength(game, index));
 }
-export function skillScale(game: GameState, id: string, index?: number) {
-    if (!game.skills.includes(id)) return 0;
-    let scale = game.developmentProgress[id];
+export function skillScale(game: GameState, id: string, index?: number): number {
+    if (!game.skills.includes(id) || game.developmentProgress[id] < 1) return 0;
+    return skillRestrictionScale(game, id, index);
+}
+/** 未開発の能力にも、完成した場合に残る運用上の制限を表示する。 */
+export function skillRestrictionScale(game: GameState, id: string, index?: number): number {
+    if (index === undefined) {
+        if (!hasRegionalRestrictions(game)) return skillRestrictionScale(game, id, 0);
+        return AREAS.reduce(
+            (sum, area, i) =>
+                sum + (skillRestrictionScale(game, id, i) * area.population) / WORLD_POPULATION,
+            0,
+        );
+    }
+    return (
+        playerRestrictionScale(game, id, index) *
+        (1 - (publishedResearchEffects(game, index).resistance[id] ?? 0))
+    );
+}
+
+/** 自分で取得した制約と運用停止。研究を適用する前の比較にも用いる。 */
+export function playerRestrictionScale(game: GameState, id: string, index?: number): number {
+    let scale = 1;
     for (const skill of RESTRAINT_SKILLS)
-        if (game.skills.includes(skill.id) && skill.restrains![id])
-            scale *= 1 - skill.restrains![id] * game.developmentProgress[skill.id];
+        if (
+            game.skills.includes(skill.id) &&
+            game.developmentProgress[skill.id] >= 1 &&
+            skill.restrains![id]
+        )
+            scale *= 1 - skill.restrains![id] * skillScale(game, skill.id, index);
     return scale * operationScale(game, id, index);
 }
 export function advanceSkillDevelopment(game: GameState) {
@@ -76,11 +120,9 @@ export function advanceSkillDevelopment(game: GameState) {
     return progress;
 }
 export function activeSkillEffects(game: GameState, index?: number) {
-    // 停止対応がなければ地域ごとに同じ能力を合算し直す必要はない。
-    const shared = !game.researchProjects.some(
-        (project) => project.response?.action === 'stop' && responseActive(game, project),
-    );
-    const cached = shared ? commonEffects.get(game) : undefined;
+    const key = hasRegionalRestrictions(game) ? index : undefined;
+    let cache = commonEffects.get(game);
+    const cached = cache?.get(key);
     if (cached) return cached;
     const total = { ...EMPTY_EFFECTS };
     for (const skill of SKILLS) {
@@ -88,7 +130,11 @@ export function activeSkillEffects(game: GameState, index?: number) {
         if (scale === 0) continue;
         for (const key of EFFECT_KEYS) total[key] += (skill.effect[key] ?? 0) * scale;
     }
-    if (shared) commonEffects.set(game, total);
+    if (!cache) {
+        cache = new Map();
+        commonEffects.set(game, cache);
+    }
+    cache.set(key, total);
     return total;
 }
 

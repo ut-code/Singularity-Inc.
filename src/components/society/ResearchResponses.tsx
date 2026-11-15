@@ -1,19 +1,18 @@
 import { Handshake, Pause, TriangleAlert } from 'lucide-react';
 import {
+    COOPERATION_IMPACT_REDUCTION,
     RESPONSE_COST,
     RESPONSE_LABEL,
-    RESPONSE_WEEKS,
     respondToResearch,
     responseActive,
+    responseAvailable,
     responseBlockReason,
-    responseSafe,
 } from '../../game/research/responses';
-import { researchRate } from '../../game/research/system';
-import type { ResearchAction, ResearchProject } from '../../game/research/types';
+import { researchRate, researchTopic } from '../../game/research/system';
+import type { ResearchProject } from '../../game/research/types';
 import type { GameState } from '../../game/types';
 import { useGameStore } from '../../state/gameStore';
 
-const actions: ResearchAction[] = ['cooperate', 'pressure', 'stop'];
 const icons = { cooperate: Handshake, pressure: TriangleAlert, stop: Pause };
 export function ResearchResponses({
     game,
@@ -37,21 +36,26 @@ export function ResearchResponses({
                     <small>
                         {responseActive(game, project)
                             ? `残り${project.response.untilWeek - game.week}週`
-                            : '対応済み'}
+                            : project.response.action === 'cooperate' && project.status === 'active'
+                              ? '公表時の軽減を適用中'
+                              : '対応済み'}
                     </small>
                 </div>
             </div>
         );
     }
     if (project.status !== 'active') return null;
+    const actions = researchTopic(project).responses.filter((action) =>
+        responseAvailable(game, project, action),
+    );
+    if (!actions.length) return null;
     return (
         <section className="investigation-responses" aria-label="研究への対応">
             <div className="investigation-responses-heading">
                 <h3>対応を選ぶ</h3>
-                <small>一度だけ · {RESPONSE_WEEKS}週</small>
+                <small>一度だけ</small>
             </div>
             {actions.map((action) => {
-                if (action === 'cooperate' && !responseSafe(game, project)) return null;
                 const reason = responseBlockReason(game, project, action);
                 const preview = respondToResearch(
                     { ...game, skillPoints: Math.max(game.skillPoints, RESPONSE_COST[action]) },
@@ -92,19 +96,24 @@ export function ResearchResponses({
                                     <span>
                                         対象機能 <b>停止</b>
                                     </span>
+                                ) : action === 'cooperate' ? (
+                                    <span>
+                                        公表時の信頼低下・拒否増加{' '}
+                                        <b>{Math.round(COOPERATION_IMPACT_REDUCTION * 100)}%軽減</b>
+                                    </span>
                                 ) : (
                                     <span>
-                                        信頼 <b>{action === 'pressure' ? '低下' : '上昇'}</b>
+                                        信頼 <b>低下</b>
                                     </span>
                                 )}
                             </span>
                             <small className="investigation-choice-note">
                                 {reason ??
                                     (action === 'stop'
-                                        ? '対象機能を止め、研究の進行を遅らせます。'
+                                        ? '12週、対象機能を止めて研究を遅らせます。'
                                         : action === 'pressure'
-                                          ? '研究を遅らせますが、不信が強まります。'
-                                          : '信頼を回復しますが、検証が速まります。')}
+                                          ? '12週、研究を遅らせますが、不信が強まります。'
+                                          : '信頼+3。研究速度は12週上昇し、継続効果は軽減しません。')}
                             </small>
                         </span>
                     </button>

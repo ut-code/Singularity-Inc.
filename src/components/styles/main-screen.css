@@ -133,6 +133,31 @@
     color: var(--text);
     border-color: var(--line-selected);
 }
+.debug-warp-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0 0;
+    padding: 9px 0 0;
+    min-width: 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+}
+.debug-warp-controls > small {
+    color: var(--muted);
+    font-size: 9px;
+}
+.debug-warp-controls button {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 5px 9px;
+    font-size: 11px;
+}
+.debug-warp-controls :where(button) small {
+    color: var(--muted);
+    font-size: 10px;
+}
 .right-hud {
     position: absolute;
     top: 16px;

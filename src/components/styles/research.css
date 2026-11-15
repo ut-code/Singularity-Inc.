@@ -253,8 +253,10 @@
 .skill-details .skill-countermeasure {
     color: var(--warning);
 }
-.tree-node-content .tree-suppression {
-    margin-left: auto;
+.tree-node .tree-suppression {
+    position: absolute;
+    right: 8px;
+    bottom: 7px;
     color: var(--warning);
     font-size: 10px;
     font-weight: 600;
@@ -300,10 +302,10 @@
     background: var(--line);
 }
 .skill-effectiveness-bar::-webkit-meter-optimum-value {
-    background: var(--accent);
+    background: var(--warning);
 }
 .skill-effectiveness-bar::-moz-meter-bar {
-    background: var(--accent);
+    background: var(--warning);
 }
 .skill-effectiveness-causes {
     display: flex;
@@ -319,6 +321,11 @@
 }
 .skill-effectiveness-causes b {
     font-weight: 500;
+}
+.skill-restriction-source {
+    margin-left: 14px;
+    color: var(--muted);
+    font-size: inherit;
 }
 .skill-details .skill-local-limit {
     margin: 5px 0;
@@ -336,6 +343,9 @@
     align-items: center;
     gap: 5px;
     color: var(--warning);
+}
+.skill-traits .dependency-trait {
+    color: #b3a2bd;
 }
 .skill-restraints {
     margin: 16px 0;
@@ -412,6 +422,13 @@
 }
 .skill-effect-list li {
     padding: 4px 0;
+}
+.skill-effect-detail {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.6;
 }
 .skill-effect-list h3 {
     margin: 0 0 8px;

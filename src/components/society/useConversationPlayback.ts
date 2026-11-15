@@ -8,7 +8,7 @@ export interface ConversationMessage {
 // 会話演出の調整はここで行う。ゲーム内の時間・効果には影響しない。
 const TEXT_INTERVAL_MS = 28;
 const CHARACTERS_PER_TICK = 2;
-const HUMAN_REPLY_DELAY_MS = 1400;
+const HUMAN_REPLY_DELAY_MS = 1000;
 const RESULT_DELAY_MS = 300;
 
 export function useConversationPlayback(messages: ConversationMessage[]) {

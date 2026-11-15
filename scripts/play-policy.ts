@@ -211,24 +211,22 @@ function useOpportunity(game: GameState, mode: ActionPolicy, reserve: number) {
                 if (choice.cost > 0 && game.skillPoints < choice.cost + reserve) return [];
                 const change = encounterChange(game, encounter, choice);
                 const area = game.areas[encounter.area];
-                const penalty = encounterDefinition(encounter).onIgnore;
-                const prevented = penalty
-                    ? (area.autonomous * penalty.refuse + area.dependent * penalty.recover) *
-                      encounter.strength
-                    : 0;
-                if (change.amount + prevented < 0.015) return [];
+                const reward = 'rewardSP' in choice ? (choice.rewardSP ?? 0) * 0.05 : 0;
+                if (change.amount + change.trust * 0.25 + reward < 0.015) return [];
                 const utility =
-                    change.amount *
-                        (choice.transfer === 'reconcile'
-                            ? area.antiAI > 0.2
-                                ? 2
-                                : 1
-                            : choice.transfer === 'rely'
-                              ? 1.25
-                              : area.autonomous + area.dependent < 0.1
-                                ? 1.5
-                                : 1) +
-                    prevented;
+                    'mitigation' in choice
+                        ? change.amount + change.trust * 0.25
+                        : change.amount *
+                              (choice.transfer === 'reconcile'
+                                  ? area.antiAI > 0.2
+                                      ? 2
+                                      : 1
+                                  : choice.transfer === 'rely'
+                                    ? 1.25
+                                    : area.autonomous + area.dependent < 0.1
+                                      ? 1.5
+                                      : 1) +
+                          reward;
                 return [
                     {
                         encounter,
@@ -359,7 +357,9 @@ export function simulatePolicy(options: PlayOptions) {
         );
         if (
             game.skillPoints < 0 ||
-            game.encounters.filter((item) => item.status === 'pending').length > 2 ||
+            game.encounters.filter(
+                (item) => item.status === 'pending' || item.status === 'responded',
+            ).length > 2 ||
             maxMarkers > 3 ||
             game.areas.some(
                 (area) =>

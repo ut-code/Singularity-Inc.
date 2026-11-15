@@ -1,26 +1,46 @@
 export type EncounterKind = 'event' | 'chat';
-export interface EncounterChoice {
+export interface EventImpact {
+    refuse: number;
+    trust: number;
+    recover: number;
+}
+interface ChoiceBase {
     id: string;
     label: string;
     cost: number;
+    result: string;
+}
+export interface ChatChoice extends ChoiceBase {
     transfer: 'adopt' | 'rely' | 'reconcile';
     fraction: number;
     trust?: number;
-    result: string;
-    reply?: string;
-    answer?: string;
+    rewardSP?: number;
+    reply: string;
+    answer: string;
 }
-export interface EncounterDefinition {
-    onIgnore?: { refuse: number; trust: number; recover: number };
+export interface EventChoice extends ChoiceBase {
+    mitigation: EventImpact;
+}
+export type EncounterChoice = ChatChoice | EventChoice;
+interface EncounterBase {
     id: string;
-    kind: EncounterKind;
     title: string;
     summary: string;
     areas: number[];
     affinity: 'access' | 'trust' | 'dependency' | 'politics';
-    contact?: { name: string; role: string; initials: string };
-    choices: EncounterChoice[];
 }
+export interface ChatDefinition extends EncounterBase {
+    kind: 'chat';
+    contact: { name: string; role: string; initials: string };
+    bonus?: boolean;
+    choices: ChatChoice[];
+}
+export interface EventDefinition extends EncounterBase {
+    kind: 'event';
+    onDeadline: EventImpact;
+    choices: EventChoice[];
+}
+export type EncounterDefinition = ChatDefinition | EventDefinition;
 export interface EncounterState {
     id: string;
     definitionId: string;
@@ -28,7 +48,7 @@ export interface EncounterState {
     startedWeek: number;
     strength: number;
     deadline: number;
-    status: 'pending' | 'resolved' | 'expired';
+    status: 'pending' | 'responded' | 'resolved' | 'expired';
     choiceId?: string;
     result?: string;
     resolvedWeek?: number;

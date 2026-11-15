@@ -1,60 +1,101 @@
+import { SNS_RECONCILIATION, SNS_REFUSAL_REDUCTION } from '../../game/skillRuntime';
 import { SKILLS } from '../../game/skills';
 import type { Skill, SkillDomain } from '../../game/types';
 
-const DELEGATION_EFFECTS: Record<SkillDomain, string> = {
-    work: '通常利用者を依存者に変える。企業利用の多い地域ほど効果が高い',
-    personal: '通常利用者を依存者に変える。企業利用の少ない地域ほど効果が高い',
-    learning: '通常利用者を依存者に変える。教育水準の高い地域ほど効果が高い',
+const DEPENDENCY_CONDITIONS: Record<SkillDomain, string> = {
+    work: '企業活動が活発な地域ほど効果が高い',
+    personal: '企業活動の少ない地域ほど効果が高い',
+    learning: '教育水準の高い地域ほど効果が高い',
 };
 
 const SKILL_NAMES = Object.fromEntries(SKILLS.map((skill) => [skill.id, skill.name]));
 
-interface SkillDrawback {
+interface SkillBenefit {
     text: string;
+    detail?: string;
+}
+interface SkillDrawback extends SkillBenefit {
     value?: string;
 }
 
-/** 技術の仕組みは説明文に任せ、実装に対応する主な作用だけを列挙する。 */
+/** 同じ作用の能力値を共通の基準で段階表示する。人口変化率には換算しない。 */
+function strength(value: number, medium = 0.15, high = 0.35, extreme = 0.6) {
+    return value >= extreme ? '極高' : value >= high ? '高' : value >= medium ? '中' : '低';
+}
+
+/** 主な作用と強さを主文に、適用条件を補足に分ける。 */
 export function skillEffectDescriptions(skill: Skill) {
     const effect = skill.effect;
-    const benefits: string[] = [];
+    const benefits: SkillBenefit[] = [];
     const drawbacks: SkillDrawback[] = [];
+    const add = (text: string, detail?: string) => benefits.push({ text, detail });
 
-    if (effect.quality) benefits.push('新規利用・継続利用の促進');
-    else if (effect.spread) benefits.push('新規利用の促進');
-    if (effect.enterprise) benefits.push('企業利用の多い地域での新規利用・継続利用の促進');
-    if (effect.education) benefits.push('教育水準の高い地域での新規利用・継続利用の促進');
-    if (effect.access) benefits.push('通信環境の悪い地域での新規利用の促進');
-    if (effect.compliance) benefits.push('規制が厳しい地域での新規利用の促進');
-    if (effect.dependency) benefits.push(DELEGATION_EFFECTS[skill.domain!]);
+    // 同じ主効果に寄与する能力値をまとめ、条件と効き方は補足に残す。
+    const utility =
+        (effect.quality ?? 0) +
+        (effect.spread ?? 0) +
+        (effect.enterprise ?? 0) +
+        (effect.education ?? 0) +
+        (effect.access ?? 0);
+    if (utility > 0) {
+        const details: string[] = [];
+        if (effect.spread) details.push('地域間のつながりを通じた普及にも有効');
+        if (effect.enterprise) details.push('企業活動が活発な地域ほど効果が高い');
+        if (effect.education) details.push('教育水準の高い地域ほど効果が高い');
+        if (effect.access) details.push('通信環境の悪い地域ほど効果が高い');
+        add(`新規・継続利用の促進（${strength(utility)}）`, details.join('。'));
+    }
+    if (effect.compliance)
+        add(
+            `新規利用の促進（${strength(effect.compliance)}）`,
+            '規制や政治的な障壁がある地域ほど効果が高い',
+        );
+    if (effect.dependency)
+        add(
+            `通常利用者の依存化（${strength(effect.dependency, 0.3, 0.6, 1)}）`,
+            DEPENDENCY_CONDITIONS[skill.domain!],
+        );
     if (effect.iqDependency)
-        benefits.push(
-            '取得したIQスキルの数に比例して、通常利用者を依存者に変える',
+        add(
+            '完成したIQスキル数に比例して、通常利用者の依存化を促進',
             '教育水準の高い地域ほど効果が高い',
         );
-    if (effect.researchInsight)
-        benefits.push(`人間側の研究公表ごとに +${effect.researchInsight} SP。法案は対象外`);
-    if (effect.resilience) benefits.push('依存からの回復を抑制');
-    if (skill.dependencyLock)
-        benefits.push(
-            `依存率${Math.round(skill.dependencyLock.threshold * 100)}%以上の地域で、依存者が通常利用・利用拒否へ移る人口を${Math.round(skill.dependencyLock.recoveryReduction * 100)}%抑制`,
+    if (effect.researchInsight) add(`研究の公表ごとに +${effect.researchInsight} SP`);
+    if (effect.researchDelay)
+        add(
+            '通常研究の開始を遅延',
+            `新たに条件を満たしてから候補になるまで平均${effect.researchDelay}週待機。法案・AI制御研究は対象外`,
         );
-    if (effect.trust) benefits.push('地域の信頼度の向上');
-    if (effect.reconciliation) benefits.push('利用拒否の解消を促進');
-    if (effect.discretion) benefits.push('利用拒否の抑制');
+    if (effect.resilience) add(`依存からの回復を抑制（${strength(effect.resilience)}）`);
+    if (skill.dependencyLock)
+        add(
+            `依存者の離脱を${Math.round(skill.dependencyLock.recoveryReduction * 100)}%抑制`,
+            `依存率${Math.round(skill.dependencyLock.threshold * 100)}%以上の地域で有効。通常利用・利用拒否への移行を抑える`,
+        );
+    if (effect.trust)
+        add(
+            `信頼度の上昇（${strength(effect.trust, 0.001, 0.002, 0.003)}）`,
+            '地域のAI利用率が高いほど効果が高い',
+        );
+    if (effect.reconciliation)
+        add(`利用拒否者の再利用を促進（${strength(effect.reconciliation, 0.001, 0.01, 0.03)}）`);
+    if (effect.discretion)
+        add(`研究を除く、通常の利用拒否を抑制（${strength(effect.discretion)}）`);
 
-    if (effect.researchSupport) {
-        drawbacks.push({ text: '人間側の調査・対策研究の加速' });
+    if (effect.researchSupport)
+        drawbacks.push({
+            text: `人間側の研究速度 +${Number((effect.researchSupport * 20).toFixed(2))}%`,
+        });
+    if (skill.id === 'mind-control') add('依存者から周辺地域への普及力が4倍に');
+    if (skill.id === 'sns-intervention') {
+        add(`研究を除く、通常の利用拒否圧力を${Math.round(SNS_REFUSAL_REDUCTION * 100)}%軽減`);
+        add(
+            `利用拒否者の再利用を促進（${strength(SNS_RECONCILIATION / 0.35, 0.001, 0.01, 0.03)}）`,
+        );
     }
-    if (skill.id === 'mind-control') benefits.push('依存者から周辺地域への普及を促進');
-    if (skill.id === 'sns-intervention') benefits.push('利用拒否の抑制', '利用拒否の解消を促進');
 
     if (skill.exceedsAuthority)
-        drawbacks.push({
-            text: skill.exceedsAuthority
-                ? '介入発覚時の大幅な信頼低下・利用拒否の増加'
-                : '能力発覚時の信頼低下・利用拒否の増加',
-        });
+        drawbacks.push({ text: '介入発覚時の大幅な信頼低下・利用拒否の増加' });
     for (const [id, restraint] of Object.entries(skill.restrains ?? {}))
         drawbacks.push({ text: SKILL_NAMES[id], value: `${Math.round(restraint * 100)}%抑制` });
 

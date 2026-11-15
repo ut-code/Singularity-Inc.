@@ -36,7 +36,7 @@ export function ResearchProjectPanel({
         ? JURISDICTIONS.find((item) => item.id === project.jurisdiction)!.name
         : '全世界';
     const { Icon, label, color } = researchPresentation(project);
-    const effects = researchEffectGroups(topic);
+    const effects = researchEffectGroups(topic, project);
     const modifiers: string[] = [];
     if (activeSkillEffects(game).researchSupport > 0) modifiers.push('研究支援');
     if (responseActive(game, project)) modifiers.push(RESPONSE_LABEL[project.response!.action]);

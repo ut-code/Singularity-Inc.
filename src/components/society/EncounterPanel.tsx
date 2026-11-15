@@ -49,9 +49,11 @@ export function EncounterPanel({
                 <div className="encounter-meta">
                     {area.name}
                     <span>
-                        {encounter.status === 'pending'
+                        {game.week < encounter.deadline && (!chat || encounter.status === 'pending')
                             ? `残り${encounter.deadline - game.week}週`
-                            : '対応済み'}
+                            : encounter.choiceId
+                              ? '対応済み'
+                              : '期限終了'}
                     </span>
                 </div>
                 {chat ? (
@@ -59,17 +61,17 @@ export function EncounterPanel({
                 ) : (
                     <div>
                         <p className="event-summary">{definition.summary}</p>
-                        <small className="encounter-risk">未対応：利用拒否が増え、信頼が低下</small>
+                        <small className="encounter-risk">期限に利用拒否が増え、信頼が低下</small>
                     </div>
                 )}
-                {encounter.status === 'resolved' ? (
+                {encounter.choiceId ? (
                     !chat && (
                         <div className="encounter-result">
                             <Check size={17} />
                             <p>{encounter.result}</p>
                         </div>
                     )
-                ) : (
+                ) : encounter.status === 'pending' ? (
                     <fieldset
                         className="encounter-choices"
                         aria-label={chat ? '返信を選ぶ' : '対応を選ぶ'}
@@ -86,23 +88,49 @@ export function EncounterPanel({
                                 >
                                     <div>
                                         <strong>{choice.label}</strong>
-                                        <span>
-                                            {choice.cost === 0 ? '無料' : `${choice.cost} SP`}
-                                        </span>
                                     </div>
-                                    <small>
-                                        {choice.transfer === 'rely'
-                                            ? '依存上昇'
-                                            : choice.transfer === 'reconcile'
-                                              ? '利用拒否の緩和'
-                                              : '利用拡大'}
-                                        {(choice.trust ?? 0) < 0 ? ' · 不信のリスク' : ''}
+                                    <small className="encounter-choice-effects">
+                                        {'mitigation' in choice ? (
+                                            <>
+                                                <span>
+                                                    利用拒否の増加を
+                                                    {Math.round(choice.mitigation.refuse * 100)}
+                                                    %軽減
+                                                </span>
+                                                <span>
+                                                    信頼低下を
+                                                    {Math.round(choice.mitigation.trust * 100)}%軽減
+                                                </span>
+                                                {!chat &&
+                                                    definition.onDeadline.recover > 0 &&
+                                                    choice.mitigation.recover > 0 && (
+                                                        <span>
+                                                            依存からの回復を
+                                                            {Math.round(
+                                                                choice.mitigation.recover * 100,
+                                                            )}
+                                                            %軽減
+                                                        </span>
+                                                    )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {choice.rewardSP
+                                                    ? `+${choice.rewardSP} SP`
+                                                    : choice.transfer === 'rely'
+                                                      ? '通常利用からAI依存へ'
+                                                      : choice.transfer === 'reconcile'
+                                                        ? '利用拒否から通常利用へ'
+                                                        : 'AI利用者が増加'}
+                                                {(choice.trust ?? 0) < 0 ? ' · 不信のリスク' : ''}
+                                            </>
+                                        )}
                                     </small>
                                 </button>
                             );
                         })}
                     </fieldset>
-                )}
+                ) : null}
             </div>
         </Modal>
     );

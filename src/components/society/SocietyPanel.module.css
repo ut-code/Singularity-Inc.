@@ -1,0 +1,101 @@
+/* 配色と形状はメイン画面の共通テーマを使う。投稿には攻略用の操作を追加しない。 */
+.panel:global(.sns-panel) {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 17px 18px 14px;
+    flex-shrink: 0;
+}
+.heading h2 {
+    margin: 0 0 5px;
+    font-size: 17px;
+    font-weight: 500;
+}
+.timeline {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    flex: 1;
+}
+.post {
+    display: flex;
+    gap: 10px;
+    padding: 16px 14px;
+    border-bottom: 1px solid var(--line);
+}
+.avatar {
+    width: 31px;
+    height: 31px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    background: var(--surface-control);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+}
+.postContent {
+    min-width: 0;
+    flex: 1;
+}
+.postHeading {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    flex-wrap: wrap;
+    line-height: 1.5;
+}
+.postHeading > strong {
+    font-size: 12px;
+    font-weight: 600;
+}
+.postHeading > time {
+    color: var(--muted);
+    font-size: 9px;
+    margin-left: auto;
+}
+.intervention {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--accent);
+    font-size: 9px;
+}
+.postContent > p {
+    margin: 9px 0 12px;
+    font-size: 12px;
+    line-height: 1.85;
+    overflow-wrap: anywhere;
+}
+.newPosts {
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--surface-selected);
+    padding: 10px;
+    color: var(--accent);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+@media (max-width: 800px) {
+    .post {
+        padding: 14px 12px;
+        gap: 8px;
+    }
+    .avatar {
+        width: 27px;
+        height: 27px;
+    }
+    .heading {
+        padding: 14px;
+    }
+}

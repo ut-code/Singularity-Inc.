@@ -25,6 +25,8 @@ import {
     INTENT_REFUSAL_PRESSURE,
     intentReaction,
     publicAuthorityStrength,
+    SNS_RECONCILIATION,
+    SNS_REFUSAL_REDUCTION,
     serviceUsefulness,
     skillScale,
 } from './skillRuntime.ts';
@@ -64,6 +66,7 @@ export function createGame(
         peakAdoption: 0,
         exposedSkills: [],
         researchProjects: [],
+        researchReadyWeeks: {},
         lastResearchWeek: -12,
         controlProgress: 0,
         controlStarted: false,
@@ -210,12 +213,8 @@ export function advanceWeek(
                 1,
                 PERSONAL_LINKS[i].reduce((sum, weight) => sum + weight, 0),
             );
-        const sns = previous.skills.includes('sns-intervention')
-            ? 1 -
-              0.8 *
-                  skillScale(previous, 'sns-intervention', i) *
-                  (1 - (research.resistance['sns-intervention'] ?? 0))
-            : 1;
+        const snsStrength = skillScale(previous, 'sns-intervention', i);
+        const sns = 1 - SNS_REFUSAL_REDUCTION * snsStrength;
         const pressure =
             sns *
                 (((area.dependent * 0.01 + adopted * 0.25 + nearbyOpposition * 0.035 * sns) *
@@ -235,7 +234,8 @@ export function advanceWeek(
                 (0.001 +
                     area.favorability * 0.003 +
                     effect.reconciliation * 0.35 +
-                    ((1 - sns) * 0.08) / (1 + researchPressure * 100 + area.antiAI * 5) +
+                    (SNS_RECONCILIATION * snsStrength) /
+                        (1 + researchPressure * 100 + area.antiAI * 5) +
                     (reassurance * 0.012) / (1 + research.alternatives * 1000))) /
             (1 + researchPressure * 40 + publicAuthority * 0.5 + research.alternatives * 250);
         const socialPressure = consensusPressure(

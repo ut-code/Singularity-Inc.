@@ -50,6 +50,25 @@
     font-size: 17px;
     margin: 7px 0 0;
 }
+/* 旧SNSパネルの位置と寸法を復元する。 */
+.sns-panel {
+    position: absolute;
+    top: 89px;
+    right: 18px;
+    bottom: 80px;
+    width: min(380px, calc(100% - 36px));
+    padding: 22px;
+    overflow-y: auto;
+}
+@media (max-width: 800px) {
+    .sns-panel {
+        top: 85px;
+        right: 12px;
+        bottom: 65px;
+        width: min(360px, calc(100% - 24px));
+        padding: 18px;
+    }
+}
 .contact-heading {
     display: flex;
     align-items: center;

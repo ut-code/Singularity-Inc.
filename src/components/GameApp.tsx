@@ -1,4 +1,4 @@
-import { Network, X } from 'lucide-react';
+import { Network, Radio, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AREAS, STAGE_COLORS, STAGES, WORLD_POPULATION } from '../game/data';
 import { advanceWeek, metrics } from '../game/engine';
@@ -24,6 +24,7 @@ import { EncounterPanel } from './society/EncounterPanel';
 import type { MapEncounter } from './society/MapEncounterMarkers';
 import { RegionalResearch } from './society/RegionalResearch';
 import { ControlResearchPanel, ResearchProjectPanel } from './society/ResearchProjectPanel';
+import { SocietyPanel } from './society/SocietyPanel';
 import { useAnimationSpeed } from './useAnimationSpeed';
 import { WorldMap } from './WorldMap';
 import { WorldMetricsWidget } from './WorldMetricsWidget';
@@ -33,6 +34,7 @@ import { percent, population } from './widgets';
 type Panel =
     | { kind: 'world' }
     | { kind: 'control' }
+    | { kind: 'social' }
     | { kind: 'skills'; skillId?: string }
     | { kind: 'region'; id: number }
     | { kind: 'encounter'; id: string };
@@ -45,6 +47,7 @@ export function GameApp({
 }) {
     const game = useGameStore((state) => state.game)!;
     const session = useGameStore((state) => state.session);
+    const debugPreset = useGameStore((state) => state.debugPreset);
     const shell = useRef<HTMLElement>(null);
     useAnimationSpeed(shell, game.speed);
     const [panel, setPanel] = useState<Panel | null>(null);
@@ -119,7 +122,7 @@ export function GameApp({
                 };
             }),
         ...game.encounters
-            .filter((item) => item.status === 'pending')
+            .filter((item) => item.status === 'pending' || item.status === 'responded')
             .map((item) => {
                 const definition = encounterDefinition(item);
                 return {
@@ -127,7 +130,12 @@ export function GameApp({
                     title: definition.title,
                     encounter: item,
                     week: game.week,
-                    stage: definition.kind === 'chat' ? 'チャット' : '不祥事',
+                    stage:
+                        definition.kind === 'chat'
+                            ? 'チャット'
+                            : item.status === 'responded'
+                              ? '対応済み'
+                              : 'イベント',
                     kind: definition.kind,
                     location: AREAS[item.area],
                 };
@@ -184,6 +192,8 @@ export function GameApp({
                 />
                 <WorldNews key={`news:${session}`} game={game} speed={blocked ? 0 : game.speed} />
                 <Onboarding
+                    key={`hints:${session}`}
+                    skipExistingHints={debugPreset}
                     game={game}
                     regions={regions}
                     blocked={blocked}
@@ -255,7 +265,7 @@ export function GameApp({
                                 </div>
                             )}
                         </div>
-                        {selected !== null && <RegionalResearch game={game} area={selected} />}
+                        <RegionalResearch game={game} area={selected} />
                     </aside>
                 )}
                 <footer className="map-footer">
@@ -276,13 +286,24 @@ export function GameApp({
                     <nav className="game-actions" aria-label="世界への戦略">
                         <button
                             type="button"
+                            className="sns-button glass"
+                            aria-label="世界の様子"
+                            aria-controls="sns-panel"
+                            aria-expanded={visible?.kind === 'social'}
+                            onClick={() => togglePanel({ kind: 'social' })}
+                        >
+                            <Radio size={20} aria-hidden="true" />
+                            <span>世界の様子</span>
+                        </button>
+                        <button
+                            type="button"
                             className="glass"
                             data-coachmark="self-improvement"
-                            aria-label="自己改良"
+                            aria-label="スキルツリー"
                             onClick={() => togglePanel({ kind: 'skills' })}
                         >
                             <Network size={20} />
-                            <span>自己改良</span>
+                            <span>スキルツリー</span>
                             <b>
                                 {game.skillPoints} <small>SP</small>
                             </b>
@@ -292,6 +313,7 @@ export function GameApp({
                 {visible?.kind === 'control' && (
                     <ControlResearchPanel game={game} onClose={closePanel} />
                 )}
+                {visible?.kind === 'social' && <SocietyPanel onClose={closePanel} />}
                 {selectedResearch && (
                     <ResearchProjectPanel
                         key={selectedResearch.id}
@@ -319,11 +341,7 @@ export function GameApp({
                     />
                 )}
                 {game.outcome !== 'playing' && !game.continued && (
-                    <Result
-                        game={game}
-                        onContinue={useGameStore.getState().continuePlaying}
-                        onReturnToTitle={onReturnToTitle}
-                    />
+                    <Result game={game} onReturnToTitle={onReturnToTitle} />
                 )}
             </main>
         </ProjectedGameContext>

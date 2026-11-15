@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     SAVED_SKILL_POSITIONS,
     type SkillPositions,
@@ -16,7 +16,8 @@ export function useSkillLayoutEditor() {
     const [dirty, setDirty] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const tree = useMemo(() => skillLayout(positions), [positions]);
+    // 座標を維持したまま前提データが更新されても、接続を古い状態で保持しない。
+    const tree = skillLayout(positions);
 
     useEffect(() => {
         if (!import.meta.env.DEV) return;

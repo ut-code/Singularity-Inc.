@@ -110,7 +110,8 @@
         padding: 6px 8px;
         transform: none;
     }
-    .area-card {
+    .area-card,
+    .sns-panel {
         top: calc(var(--mobile-top) + 82px + var(--countermeasure-offset));
         bottom: calc(var(--mobile-bottom) + 192px);
         left: var(--mobile-left);
@@ -128,6 +129,7 @@
         height: 44px;
     }
     .area-card,
+    .sns-panel,
     .modal,
     .skill-details,
     .tree-viewport {
@@ -190,7 +192,8 @@
         top: calc(var(--mobile-top) + 82px);
         bottom: calc(var(--mobile-bottom) + 112px);
     }
-    .area-card {
+    .area-card,
+    .sns-panel {
         top: var(--mobile-top);
         bottom: var(--mobile-bottom);
     }

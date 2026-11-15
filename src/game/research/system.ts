@@ -14,7 +14,7 @@ import { activeSkillEffects, INTENT_REFUSAL_PRESSURE, skillScale } from '../skil
 import { SKILLS } from '../skills.ts';
 import type { GameState } from '../types.ts';
 import { instituteArea } from './locations.ts';
-import { responseAreas, responseResearchMultiplier } from './responses.ts';
+import { publicationEffect, responseAreas, responseResearchMultiplier } from './responses.ts';
 import { researchEffectGroups } from './text.ts';
 import type { ResearchProject } from './types.ts';
 
@@ -22,6 +22,7 @@ export { RESEARCH_TOPICS } from '../../content/research.ts';
 
 const START_INTERVAL = 12;
 const MAX_ACTIVE_RESEARCH = 3;
+const effectCache = new WeakMap<GameState, Map<number, ResearchEffects>>();
 
 export function researchTopic(project: ResearchProject) {
     return RESEARCH_TOPICS.find((topic) => topic.id === project.researchId)!;
@@ -33,6 +34,9 @@ export function researchApplies(project: ResearchProject, index: number) {
     );
 }
 export function publishedResearchEffects(game: GameState, index: number): ResearchEffects {
+    let cache = effectCache.get(game);
+    const cached = cache?.get(index);
+    if (cached) return cached;
     const result: ResearchEffects = {
         resistance: {},
         pressure: 0,
@@ -57,6 +61,11 @@ export function publishedResearchEffects(game: GameState, index: number): Resear
             result[key] += topic.ongoing[key] ?? 0;
     }
     result.adoptionPenalty = Math.min(0.8, result.adoptionPenalty);
+    if (!cache) {
+        cache = new Map();
+        effectCache.set(game, cache);
+    }
+    cache.set(index, result);
     return result;
 }
 export function publishedResearchPressure(game: GameState, index: number) {
@@ -84,7 +93,7 @@ export function researchRate(game: GameState, project: ResearchProject) {
 
 function publish(game: GameState, project: ResearchProject): GameState {
     const topic = researchTopic(project);
-    const effect = topic.onPublish;
+    const effect = publicationEffect(topic, project);
     const insight =
         topic.category === 'research' ? Math.round(activeSkillEffects(game).researchInsight) : 0;
     const indices = responseAreas(project);
@@ -106,13 +115,7 @@ function publish(game: GameState, project: ResearchProject): GameState {
     const areas = game.areas.map((area, index) => {
         if (!indices.includes(index)) return area;
         const recovered =
-            area.dependent *
-            (effect.recover ?? 0) *
-            recoveryMultiplier(
-                published,
-                index,
-                publishedResearchEffects(published, index).resistance,
-            );
+            area.dependent * (effect.recover ?? 0) * recoveryMultiplier(published, index);
         const autonomous = area.autonomous + recovered;
         const rejected = autonomous * (effect.refuse ?? 0);
         const reconciled = area.antiAI * (effect.reconcile ?? 0);
@@ -132,6 +135,7 @@ function publish(game: GameState, project: ResearchProject): GameState {
         for (const id of topic.targets)
             if (
                 game.skills.includes(id) &&
+                game.developmentProgress[id] >= 1 &&
                 SKILLS.find((skill) => skill.id === id)!.exceedsAuthority
             )
                 exposedSkills.add(id);
@@ -147,7 +151,7 @@ function publish(game: GameState, project: ResearchProject): GameState {
                 week: game.week,
                 title: `${topic.name}${topic.category === 'regulation' ? 'が成立' : 'を公表'}`,
                 summary: `${[
-                    ...researchEffectGroups(topic).publication,
+                    ...researchEffectGroups(topic, project).publication,
                     ...researchEffectGroups(topic).ongoing,
                 ].join('。')}。${insight > 0 ? `反例解析で +${insight} SP。` : ''}`,
                 region: project.jurisdiction
@@ -173,7 +177,27 @@ function eligible(game: GameState, topic: ResearchTopic, indices: number[]) {
     );
 }
 
-/** 開始条件は普及・依存・対象スキル・先行研究だけ。知識値、共同研究、検証・施行工程は持たない。 */
+/** 条件を初めて満たした週に待機期限を決め、枠や配置が空く前から待機時間を数える。 */
+function prepareResearch(game: GameState): GameState {
+    const researchReadyWeeks = { ...game.researchReadyWeeks };
+    const delay = Math.round(activeSkillEffects(game).researchDelay);
+    for (const topic of RESEARCH_TOPICS) {
+        if (
+            topic.category !== 'research' ||
+            researchReadyWeeks[topic.id] !== undefined ||
+            game.researchProjects.some((project) => project.researchId === topic.id) ||
+            !eligible(game, topic, WORLD_AREAS)
+        )
+            continue;
+        const wait = Math.floor(
+            seededValue(game.seed, `research-delay:${topic.id}`) * (2 * delay + 1),
+        );
+        researchReadyWeeks[topic.id] = game.week + wait;
+    }
+    return { ...game, researchReadyWeeks };
+}
+
+/** 普及・依存・対象スキル・先行研究の条件と、能力秘匿による待機期限を確認する。 */
 export function advanceResearch(previous: GameState): GameState {
     if (!isGameActive(previous)) return previous;
     let game: GameState = {
@@ -189,6 +213,7 @@ export function advanceResearch(previous: GameState): GameState {
     };
     for (const project of game.researchProjects)
         if (project.status === 'active' && project.progress >= 100) game = publish(game, project);
+    game = prepareResearch(game);
     if (
         game.week - game.lastResearchWeek < START_INTERVAL ||
         game.researchProjects.filter((project) => project.status === 'active').length >=
@@ -210,7 +235,8 @@ export function advanceResearch(previous: GameState): GameState {
             const id = jurisdiction ? `${topic.id}:${jurisdiction.id}` : topic.id;
             if (
                 game.researchProjects.some((project) => project.id === id) ||
-                !eligible(game, topic, jurisdiction?.areas ?? WORLD_AREAS)
+                !eligible(game, topic, jurisdiction?.areas ?? WORLD_AREAS) ||
+                (topic.category === 'research' && game.week < game.researchReadyWeeks[topic.id])
             )
                 continue;
             const locations = jurisdiction

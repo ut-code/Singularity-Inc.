@@ -3,13 +3,7 @@ import { AREAS } from './data.ts';
 import { clamp, metrics } from './metrics.ts';
 import { recoveryMultiplier } from './recovery.ts';
 import { deployedDependency } from './skillDynamics.ts';
-import {
-    INTENT_REFUSAL_PRESSURE,
-    intentReaction,
-    serviceUsefulness,
-    skillScale,
-} from './skillRuntime.ts';
-import { SKILLS } from './skills.ts';
+import { INTENT_REFUSAL_PRESSURE, intentReaction, serviceUsefulness } from './skillRuntime.ts';
 import type { GameState, SkillEffect } from './types.ts';
 
 /** 人口移動と表示が同じ計算を使い、対策による抑制を能力値と区別する。 */
@@ -22,14 +16,12 @@ export function dependencyDynamics(
     const area = game.areas[index];
     const definition = AREAS[index];
     const use = area.autonomous + area.dependent;
-    const deployed = deployedDependency(game, index);
-    const protectedDeployment = Object.keys(research.resistance).length
-        ? deployedDependency(game, index, research.resistance)
-        : deployed;
+    const deployed = deployedDependency(game, index, true);
+    const protectedDeployment = deployedDependency(game, index);
     const potential = deployed.work + deployed.personal + deployed.learning;
     const effective =
         protectedDeployment.work + protectedDeployment.personal + protectedDeployment.learning;
-    const prematureDelegation = Math.max(0, effect.dependency - potential);
+    const prematureDelegation = Math.max(0, effect.dependency - effective);
     const independentChoice = (0.006 * (potential - effective)) / (1 + potential);
     // 信頼は合意のある委任を支える。強制的な介入や人間側の対策には効かない。
     const acceptance = clamp((area.favorability - 0.55) / 0.35);
@@ -62,14 +54,6 @@ export function dependencyDynamics(
             effect.discretion * 0.5,
     );
     const socialSupport = 1 - clamp((area.dependent - 0.85) / 0.13) * area.dependent;
-    const resilience = SKILLS.reduce(
-        (sum, skill) =>
-            sum +
-            (skill.effect.resilience ?? 0) *
-                skillScale(game, skill.id, index) *
-                (1 - (research.resistance[skill.id] ?? 0)),
-        0,
-    );
     const pressure =
         research.pressure + research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(game, index);
     const recoveryRate =
@@ -80,8 +64,8 @@ export function dependencyDynamics(
             area.antiAI * reassurance * 0.006) *
             socialSupport +
             (research.recovery + research.alternatives) * recoveryDemand * independentSociety) /
-        (1 + resilience);
-    const recoveryScale = recoveryMultiplier(game, index, research.resistance);
+        (1 + effect.resilience);
+    const recoveryScale = recoveryMultiplier(game, index);
     const restored = area.dependent * (1 - Math.exp(-recoveryRate)) * recoveryScale;
     return {
         potential,

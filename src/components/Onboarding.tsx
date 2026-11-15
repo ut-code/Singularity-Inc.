@@ -16,20 +16,43 @@ const element = (selector: string): CoachmarkPoint | null => {
     return { x: r.left + r.width / 2, y: r.top + r.height / 2, height: r.height };
 };
 
+/** プリセットで飛ばした期間の案内は再生せず、その後の新しい警告だけ残す。 */
+function presetShownHints(game: GameState) {
+    const ids = [
+        'initial',
+        'skills',
+        'control',
+        'research',
+        'regulation',
+        'scandal',
+        'chat',
+        'dependency',
+        'refusal',
+    ];
+    if (game.controlProgress >= CONTROL_CAUTION) ids.push('control-caution');
+    if (game.controlProgress >= CONTROL_ALERT) ids.push('control-alert');
+    if (metrics(game).antiAI >= 0.1) ids.push('refusal-ten');
+    if (game.researchProjects.some((project) => project.researchId === 'intent-decoding'))
+        ids.push('critical');
+    return ids;
+}
+
 export function Onboarding({
     game,
     regions,
     blocked,
     selfImprovementOpen,
+    skipExistingHints,
 }: {
     game: GameState;
     regions: MapRegion[];
     blocked: boolean;
     selfImprovementOpen: boolean;
+    skipExistingHints: boolean;
 }) {
     const frame = useMapStore((state) => state.presentedMap),
-        shown = useRef(new Set<string>()),
-        opened = useRef(false);
+        shown = useRef(new Set<string>(skipExistingHints ? presetShownHints(game) : [])),
+        opened = useRef(skipExistingHints);
     if (selfImprovementOpen) opened.current = true;
     const [active, setActive] = useState<string | null>(null),
         dismiss = useCallback(() => setActive(null), []);
@@ -67,7 +90,7 @@ export function Onboarding({
                         (sum, ring) =>
                             sum +
                             (ring.bounds.right - ring.bounds.left) *
-                                (ring.bounds.bottom - ring.bounds.top),
+                            (ring.bounds.bottom - ring.bounds.top),
                         0,
                     ) *
                     scale *
@@ -87,80 +110,32 @@ export function Onboarding({
             {
                 id: 'control-alert',
                 when: game.controlProgress >= CONTROL_ALERT,
-                text: 'AI制御研究が完成間近です。100%になると、人間に飼いならされてしまい敗北します',
+                text: 'AI制御研究が完成間近です。100%で敗北します',
                 target: () => element('.control-hud'),
             },
             {
                 id: 'control-caution',
                 when: game.controlProgress >= CONTROL_CAUTION,
-                text: 'AI制御研究がかなり進展しています。100%で敗北します',
+                text: 'AI制御研究が進展しています。100%で敗北します',
                 target: () => element('.control-hud'),
             },
             {
-                id: 'initial',
-                when: true,
-                text: 'AIエージェントの初期の利用者たちです',
-                target: () => mapPoint(game.origin),
-            },
-            {
                 id: 'skills',
-                when: !everOpened && game.week * WEEK_MS >= 12000,
+                when: !everOpened && game.week * WEEK_MS >= 24000,
                 text: 'ここでAIの能力を強化できます',
                 target: () => element('[data-coachmark="self-improvement"]'),
             },
             {
                 id: 'control',
                 when: game.controlStarted,
-                text: 'AIエージェントを安全なサンドボックスで管理する総合研究です。100%になると人間に飼いならされ、敗北になります',
+                text: 'AI制御研究が100%になると敗北します',
                 target: () => element('.control-hud'),
             },
             {
                 id: 'critical',
                 when: true,
-                text: 'AIエージェントの目的に関する研究が始まりました。研究が完成すると深刻な不利益があります',
-                target: () => element('.map-encounter-marker[data-critical="true"]'),
-            },
-            {
-                id: 'research',
-                when: true,
-                text: 'AIエージェントに関する研究が始まりました。研究が完成すると様々な不利益があります',
-                target: () => element('.map-encounter-marker.investigation'),
-            },
-            {
-                id: 'regulation',
-                when: true,
-                text: 'AIエージェントに関する規制法案が提出されています',
-                target: () => element('.map-encounter-marker.regulation'),
-            },
-            {
-                id: 'scandal',
-                when: true,
-                text: 'AIに関する不祥事がありました。対応しないと不利益があります',
-                target: () => element('.map-encounter-marker.event'),
-            },
-            {
-                id: 'chat',
-                when: true,
-                text: 'AIエージェントに相談が来ているようです',
-                target: () => element('.map-encounter-marker.chat'),
-            },
-            {
-                id: 'dependency',
-                when: true,
-                text: '精神的・社会的にAIに依存している人々です。彼らを増やして人類の支配を目指しましょう',
-                target: () => invasion('dependent'),
-            },
-            {
-                id: 'refusal',
-                when: true,
-                text: 'AIの利用を拒否している人たちです。AIの危険性が周知されると増加し、100%になると敗北します',
-                target: () => invasion('antiAI'),
-            },
-            {
-                id: 'refusal-ten',
-                when: world.antiAI >= 0.1,
-                text: 'AI利用拒否が増加しているようです',
-                target: () => invasion('antiAI'),
+                text: 'AIの目的に関する重要研究です',
+                target: () => element('.map-encounter-marker[data-encounter-id="intent-decoding"]'),
             },
         ],
         [

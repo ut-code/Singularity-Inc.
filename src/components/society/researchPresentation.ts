@@ -4,13 +4,16 @@ import type { ResearchProject } from '../../game/research/types';
 
 export function researchPresentation(project: ResearchProject) {
     const topic = researchTopic(project);
-    if (topic.category === 'regulation')
-        return { Icon: Scale, label: '法案', color: 'var(--warning)' };
-    if ((topic.onPublish.refuse ?? 0) >= 0.07 || (topic.onPublish.trust ?? 0) <= -0.2)
-        return { Icon: FlaskConical, label: '重要研究', color: 'var(--danger)' };
+    const color = topic.severity === 'high' ? 'var(--danger)' : 'var(--warning)';
     return {
-        Icon: FlaskConical,
-        label: '研究',
-        color: 'var(--warning)',
+        Icon: topic.category === 'regulation' ? Scale : FlaskConical,
+        label:
+            topic.category === 'regulation'
+                ? '法案'
+                : topic.severity === 'high'
+                  ? '重要研究'
+                  : '研究',
+        color,
+        severity: topic.severity,
     };
 }

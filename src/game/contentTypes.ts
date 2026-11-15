@@ -9,6 +9,7 @@ export type SkillIcon =
     | 'Compass'
     | 'Cpu'
     | 'Database'
+    | 'EyeOff'
     | 'FlaskConical'
     | 'HeartHandshake'
     | 'Lightbulb'

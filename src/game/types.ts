@@ -58,6 +58,7 @@ export interface GameState {
     peakAdoption: number;
     exposedSkills: string[];
     researchProjects: ResearchProject[];
+    researchReadyWeeks: Record<string, number>;
     lastResearchWeek: number;
     controlProgress: number;
     controlStarted: boolean;
@@ -66,6 +67,7 @@ export interface GameState {
     nextScandalWeek: number;
 }
 export interface SkillEffect {
+    researchDelay?: number;
     researchInsight?: number;
     iqDependency?: number;
     spread?: number;

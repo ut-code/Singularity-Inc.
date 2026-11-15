@@ -57,22 +57,18 @@
     color: var(--text);
     font: inherit;
 }
-.result-agent-name {
-    color: var(--text-secondary);
-    font-size: 13px;
-}
 .map-encounter-marker[data-critical="true"] .map-encounter-icon,
 .control-hud[data-alert="true"] .countermeasure-trigger {
-    border-color: var(--danger);
+    border-color: var(--alert-color);
     animation: alert-border-pulse 2.4s ease-in-out infinite;
 }
 @keyframes alert-border-pulse {
     0%,
     100% {
-        border-color: var(--danger);
+        border-color: var(--alert-color);
     }
     50% {
-        border-color: color-mix(in srgb, var(--danger) 55%, black);
+        border-color: color-mix(in srgb, var(--alert-color) 55%, black);
     }
 }
 @media (prefers-reduced-motion: reduce) {

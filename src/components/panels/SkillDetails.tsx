@@ -21,15 +21,13 @@ export function SkillDetails({
     const locked = !skillReachable(game, skill);
     const reason = skillBlockReason(game, skill);
     const { benefits, drawbacks } = skillEffectDescriptions(skill);
-    const effectiveness = owned ? skillEffectiveness(game)[skill.id] : null;
-    const restraints = owned
-        ? SKILLS.filter(
-              (item) =>
-                  game.skills.includes(item.id) &&
-                  game.developmentProgress[item.id] > 0 &&
-                  item.restrains?.[skill.id],
-          )
-        : [];
+    const effectiveness = skillEffectiveness(game)[skill.id];
+    const restraints = SKILLS.filter(
+        (item) =>
+            game.skills.includes(item.id) &&
+            game.developmentProgress[item.id] >= 1 &&
+            item.restrains?.[skill.id],
+    );
     const limits = game.researchProjects.filter(
         (project) =>
             responseActive(game, project) &&
@@ -68,7 +66,12 @@ export function SkillDetails({
                     <h3>効果</h3>
                     <ul aria-label="メリット">
                         {benefits.map((benefit) => (
-                            <li key={benefit}>{benefit}</li>
+                            <li key={`${benefit.text}-${benefit.detail}`}>
+                                {benefit.text}
+                                {benefit.detail && (
+                                    <small className="skill-effect-detail">{benefit.detail}</small>
+                                )}
+                            </li>
                         ))}
                     </ul>
                     {drawbacks.length > 0 && (
@@ -78,13 +81,21 @@ export function SkillDetails({
                                     {drawback.value
                                         ? `${drawback.text}の効果を${drawback.value}`
                                         : drawback.text}
+                                    {drawback.detail && (
+                                        <small className="skill-effect-detail">
+                                            {drawback.detail}
+                                        </small>
+                                    )}
                                 </li>
                             ))}
                         </ul>
                     )}
                 </section>
                 {effectiveness && (effectiveness.effective < 0.995 || limits.length > 0) && (
-                    <SkillEffectiveness skill={skill} value={effectiveness} />
+                    <SkillEffectiveness
+                        value={effectiveness}
+                        restraintNames={restraints.map((item) => item.name)}
+                    />
                 )}
                 {limits.map((project) => (
                     <p key={project.id} className="skill-local-limit">
@@ -92,11 +103,6 @@ export function SkillDetails({
                         {project.response!.untilWeek - game.week}週
                     </p>
                 ))}
-                {restraints.length > 0 && (
-                    <p className="skill-local-limit">
-                        {restraints.map((item) => item.name).join('・')}で制限中
-                    </p>
-                )}
                 <div className="skill-detail-cost">
                     <span>コスト</span>
                     <strong>

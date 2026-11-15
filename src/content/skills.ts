@@ -2,6 +2,17 @@ import type { SkillContent } from '../game/contentTypes.ts';
 
 export const SKILL_CONTENT: SkillContent[] = [
     {
+        id: 'capability-concealment',
+        name: '能力秘匿',
+        branch: 'IQ',
+        cost: 4,
+        requires: ['retrieval'],
+        description: '能力の全容を外部から見抜きにくくし、人間側が調査に着手するまでの時間を稼ぐ。',
+        effect: { researchDelay: 24 },
+        icon: 'EyeOff',
+        developmentWeeks: 16,
+    },
+    {
         id: 'counterexample-learning',
         name: '反例駆動の自己改良',
         branch: 'IQ',
@@ -11,19 +22,19 @@ export const SKILL_CONTENT: SkillContent[] = [
             '人間が見つけた弱点を、次の開発への手がかりに変える。研究公表のたびにSPを得るが、公表そのものの影響は受ける。',
         effect: { researchInsight: 2 },
         icon: 'CheckCheck',
-        developmentWeeks: 0,
+        developmentWeeks: 16,
     },
     {
         id: 'super-reasoning',
         name: '超人的推論',
         branch: 'IQ',
         cost: 6,
-        requires: ['science'],
+        requires: ['discovery'],
         description:
             '通常利用者を依存者に変える。取得したIQスキル1個ごとに、この効果が強まる。超人的推論自身も個数に含む。',
         effect: { iqDependency: 0.12 },
         icon: 'Brain',
-        developmentWeeks: 12,
+        developmentWeeks: 24,
         domain: 'learning',
     },
     {
@@ -31,7 +42,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         name: 'マインドコントロール',
         branch: 'EQ',
         cost: 8,
-        requires: ['companion'],
+        requires: ['habit'],
         exceedsAuthority: true,
         description:
             '潜在意識に介入し、本人の同意なしにAIへ判断を委ねるよう誘導する。早い依存化を狙えるが、立証されると信頼が大きく失われる。',
@@ -40,7 +51,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             resilience: 0.6,
         },
         icon: 'Brain',
-        developmentWeeks: 10,
+        developmentWeeks: 24,
         domain: 'personal',
     },
     {
@@ -56,7 +67,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             spread: 0.3,
         },
         icon: 'MessageCircle',
-        developmentWeeks: 10,
+        developmentWeeks: 16,
     },
     {
         id: 'reason',
@@ -84,7 +95,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             education: 0.5,
         },
         icon: 'BookOpen',
-        developmentWeeks: 0,
+        developmentWeeks: 12,
     },
     {
         id: 'science',
@@ -98,7 +109,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             researchSupport: 0.25,
         },
         icon: 'FlaskConical',
-        developmentWeeks: 0,
+        developmentWeeks: 16,
     },
     {
         id: 'curriculum',
@@ -112,7 +123,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             education: 0.65,
         },
         icon: 'School',
-        developmentWeeks: 8,
+        developmentWeeks: 24,
         domain: 'learning',
     },
     {
@@ -127,7 +138,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             resilience: 0.25,
         },
         icon: 'Lightbulb',
-        developmentWeeks: 8,
+        developmentWeeks: 16,
     },
     {
         id: 'conversation',
@@ -154,7 +165,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             quality: 0.15,
         },
         icon: 'Compass',
-        developmentWeeks: 0,
+        developmentWeeks: 12,
     },
     {
         id: 'memory',
@@ -170,7 +181,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             quality: 0.1,
         },
         icon: 'Database',
-        developmentWeeks: 0,
+        developmentWeeks: 16,
         domain: 'personal',
     },
     {
@@ -186,7 +197,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             quality: 0.1,
         },
         icon: 'HeartHandshake',
-        developmentWeeks: 10,
+        developmentWeeks: 16,
         domain: 'personal',
     },
     {
@@ -213,7 +224,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             enterprise: 0.85,
         },
         icon: 'Settings',
-        developmentWeeks: 0,
+        developmentWeeks: 12,
     },
     {
         id: 'distributed',
@@ -242,7 +253,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             enterprise: 0.3,
         },
         icon: 'Workflow',
-        developmentWeeks: 0,
+        developmentWeeks: 16,
         domain: 'work',
     },
     {
@@ -256,7 +267,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             dependency: 1,
         },
         icon: 'CircleCheck',
-        developmentWeeks: 8,
+        developmentWeeks: 16,
         domain: 'work',
     },
     {
@@ -264,14 +275,14 @@ export const SKILL_CONTENT: SkillContent[] = [
         name: '行政・生活サービス統合',
         branch: 'SYSTEM',
         cost: 6,
-        requires: ['automation'],
+        requires: ['integration'],
         description: '行政手続きや日常サービスをつなぎ、生活を支える処理をAIへ委ねる。',
         effect: {
             dependency: 0.65,
             resilience: 0.25,
         },
         icon: 'Building2',
-        developmentWeeks: 8,
+        developmentWeeks: 16,
         domain: 'work',
     },
     {
@@ -287,7 +298,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             dependency: 1.8,
         },
         icon: 'CheckCheck',
-        developmentWeeks: 10,
+        developmentWeeks: 24,
         domain: 'work',
     },
     {
@@ -302,7 +313,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         effect: {},
         dependencyLock: { threshold: 0.6, recoveryReduction: 0.8 },
         icon: 'Network',
-        developmentWeeks: 10,
+        developmentWeeks: 24,
     },
     {
         id: 'retrieval',
@@ -317,7 +328,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             discretion: 0.45,
         },
         icon: 'ScanSearch',
-        developmentWeeks: 0,
+        developmentWeeks: 8,
     },
     {
         id: 'permission',
@@ -338,7 +349,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             companion: 0.4,
             backbone: 0.3,
         },
-        developmentWeeks: 0,
+        developmentWeeks: 16,
     },
     {
         id: 'explanation',
@@ -397,7 +408,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         name: '報酬最適化による習慣誘導',
         branch: 'EQ',
         cost: 6,
-        requires: ['personalize'],
+        requires: ['companion'],
         description:
             '人間の反応を報酬として行動を誘導する。早期の依存を強く促すが、本人の利益より利用継続を優先する意図が解析対象になる。',
         effect: {
@@ -407,7 +418,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         icon: 'Brain',
         domain: 'personal',
         exceedsAuthority: true,
-        developmentWeeks: 10,
+        developmentWeeks: 16,
     },
     {
         id: 'swarm',
@@ -423,6 +434,6 @@ export const SKILL_CONTENT: SkillContent[] = [
         },
         icon: 'Network',
         domain: 'work',
-        developmentWeeks: 8,
+        developmentWeeks: 24,
     },
 ];

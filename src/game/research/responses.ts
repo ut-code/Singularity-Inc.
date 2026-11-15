@@ -1,13 +1,15 @@
-import { RESEARCH_TOPICS } from '../../content/research.ts';
+import { RESEARCH_TOPICS, type ResearchTopic } from '../../content/research.ts';
 import { AREAS, WORLD_POPULATION } from '../data.ts';
 import { clamp } from '../metrics.ts';
 import { JURISDICTIONS, regionalMetrics, WORLD_AREAS } from '../regions.ts';
 import { isGameActive } from '../session.ts';
+import { skillScale } from '../skillRuntime.ts';
 import { SKILLS } from '../skills.ts';
 import type { GameState } from '../types.ts';
 import type { ResearchAction, ResearchProject } from './types.ts';
 
 export const RESPONSE_WEEKS = 12;
+export const COOPERATION_IMPACT_REDUCTION = 0.5;
 export const RESPONSE_COST = { cooperate: 1, pressure: 2, stop: 0 } as const;
 export const RESPONSE_LABEL = {
     cooperate: '検証に協力',
@@ -22,12 +24,7 @@ export function responseAreas(project: ResearchProject) {
 }
 export function responseSkills(game: GameState, project: ResearchProject) {
     const topic = RESEARCH_TOPICS.find((item) => item.id === project.researchId)!;
-    return topic.targets.length
-        ? topic.targets
-        : game.skills.filter((id) => {
-              const skill = SKILLS.find((skill) => skill.id === id)!;
-              return skill.effect.dependency || skill.effect.iqDependency || skill.dependencyLock;
-          });
+    return topic.targets.filter((id) => game.skills.includes(id));
 }
 export function responseActive(game: GameState, project: ResearchProject) {
     return (
@@ -37,10 +34,55 @@ export function responseActive(game: GameState, project: ResearchProject) {
     );
 }
 export function responseSafe(game: GameState, project: ResearchProject) {
-    return !responseSkills(game, project).some(
+    const topic = RESEARCH_TOPICS.find((item) => item.id === project.researchId)!;
+    const targets = topic.targets.length ? topic.targets : game.skills;
+    return !targets.some(
         (id) =>
             game.skills.includes(id) && SKILLS.find((skill) => skill.id === id)!.exceedsAuthority,
     );
+}
+/** 戦略的に不利な場合ではなく、作用の対象や利益が存在しない対応を除外する。 */
+export function responseAvailable(
+    game: GameState,
+    project: ResearchProject,
+    action: ResearchAction,
+) {
+    const topic = RESEARCH_TOPICS.find((item) => item.id === project.researchId)!;
+    if (!topic.responses.includes(action)) return false;
+    if (action === 'stop')
+        return (
+            topic.targets.length === 1 &&
+            responseAreas(project).some((index) => skillScale(game, topic.targets[0], index) > 0)
+        );
+    if (action === 'cooperate') {
+        if (!responseSafe(game, project)) return false;
+        const impact = topic.onPublish;
+        return responseAreas(project).some((index) => {
+            const area = game.areas[index];
+            return (
+                ((impact.trust ?? 0) < 0 && area.favorability > 0) ||
+                ((impact.refuse ?? 0) > 0 && area.autonomous > 0)
+            );
+        });
+    }
+    return true;
+}
+
+/** 協力による公表時の軽減は、12週の研究加速が終了しても維持する。 */
+export function publicationEffect(topic: ResearchTopic, project: ResearchProject) {
+    const effect = topic.onPublish;
+    if (project.response?.action !== 'cooperate') return effect;
+    return {
+        ...effect,
+        trust:
+            effect.trust !== undefined && effect.trust < 0
+                ? effect.trust * (1 - COOPERATION_IMPACT_REDUCTION)
+                : effect.trust,
+        refuse:
+            effect.refuse !== undefined
+                ? effect.refuse * (1 - COOPERATION_IMPACT_REDUCTION)
+                : undefined,
+    };
 }
 export function responseBlockReason(
     game: GameState,
@@ -50,12 +92,10 @@ export function responseBlockReason(
     if (!isGameActive(game)) return 'ゲーム進行中のみ対応できます';
     if (project.status !== 'active') return '公表・成立済みです';
     if (project.response) return 'この案件には対応済みです';
-    if (action === 'cooperate' && !responseSafe(game, project))
-        return '対象に権限逸脱能力が含まれるため協力できません';
+    if (!responseAvailable(game, project, action))
+        return 'この案件では効果のある対応ではありません';
     if (game.skillPoints < RESPONSE_COST[action])
         return `${RESPONSE_COST[action] - game.skillPoints} SP不足`;
-    if (action === 'stop' && !responseSkills(game, project).some((id) => game.skills.includes(id)))
-        return '運用中の対象機能がありません';
     if (action === 'pressure' && regionalMetrics(game, responseAreas(project)).dependent < 0.15)
         return '対象地域の依存率15%以上が必要です';
     return null;
