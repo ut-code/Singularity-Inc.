@@ -59,6 +59,50 @@
     font-size: 14px;
     letter-spacing: 0.12em;
 }
+.start-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.title-guide {
+    min-height: 52px;
+    padding: 14px 28px;
+    border-color: #ffffff33;
+    background: transparent;
+    color: #fff;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+}
+.title-guide:hover {
+    border-color: #ffffff66;
+    background: #10182060;
+}
+.guide-close {
+    display: block;
+    min-width: 148px;
+    min-height: 44px;
+    margin-top: 24px;
+    padding: 8px 16px;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-control);
+    letter-spacing: 0.1em;
+}
+.guide-close:hover {
+    color: #fff;
+    background: var(--surface-hover);
+}
+.guide-close:focus-visible,
+.title-guide:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+}
+/* 遊び方の本文。中身を書くときはこの要素の中に段落やリストを入れる。 */
+.guide-body {
+    min-height: 40px;
+}
 .start-credits {
     padding: 28px 24px 30px;
     text-align: center;
