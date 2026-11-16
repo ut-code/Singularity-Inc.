@@ -1,4 +1,5 @@
 import { ShieldCheck, TriangleAlert } from 'lucide-react';
+import { CONTROL_ALERT, CONTROL_CAUTION } from '../game/control';
 import { useContinuousValue } from './ContinuousProgress';
 import { percent } from './widgets';
 
@@ -7,21 +8,21 @@ export function WorldMetricsWidget({
     paused,
     expanded,
     onToggle,
-    countermeasureProgress,
-    nextCountermeasureProgress,
-    countermeasuresOpen,
-    onCountermeasures,
+    onOpenControl,
+    controlStarted,
+    controlProgress,
+    nextControlProgress,
 }: {
     values: { adoption: number; dependent: number; antiAI: number };
     paused: boolean;
     expanded: boolean;
     onToggle: () => void;
-    countermeasureProgress: number | null;
-    nextCountermeasureProgress: number;
-    countermeasuresOpen: boolean;
-    onCountermeasures: () => void;
+    onOpenControl: () => void;
+    controlStarted: boolean;
+    controlProgress: number;
+    nextControlProgress: number;
 }) {
-    const protection = useContinuousValue(countermeasureProgress ?? 0, nextCountermeasureProgress);
+    const control = useContinuousValue(controlProgress, nextControlProgress);
     return (
         <div className="world-metrics-widget">
             <button
@@ -30,7 +31,6 @@ export function WorldMetricsWidget({
                 aria-label="世界全体の状態を表示"
                 onClick={onToggle}
                 aria-expanded={expanded}
-                aria-controls="population-details"
             >
                 <span className="world-number">
                     <span>AI利用</span>
@@ -45,32 +45,39 @@ export function WorldMetricsWidget({
                     <strong>{percent(values.antiAI)}</strong>
                 </span>
             </button>
+            {controlStarted && (
+                <div
+                    className="control-hud"
+                    data-urgent={control >= CONTROL_CAUTION}
+                    data-alert={control >= CONTROL_ALERT}
+                >
+                    <button
+                        type="button"
+                        className="countermeasure-trigger glass"
+                        aria-label={`AI制御研究 ${Math.floor(control * 100)}%。詳細を開く`}
+                        aria-haspopup="dialog"
+                        onClick={onOpenControl}
+                        title="AI制御研究の詳細"
+                    >
+                        <span className="countermeasure-label">
+                            <ShieldCheck size={15} />
+                            <span>AI制御研究</span>
+                            <small>100%で敗北</small>
+                        </span>
+                        <strong>
+                            {control >= 0.75 && (
+                                <TriangleAlert size={14} aria-label="完成が近づいている" />
+                            )}
+                            {Math.floor(control * 100)}%
+                        </strong>
+                        <progress value={control} max={1} aria-hidden="true" />
+                    </button>
+                </div>
+            )}
             {paused && (
                 <span className="pause-label" role="status">
                     Paused
                 </span>
-            )}
-            {countermeasureProgress !== null && (
-                <button
-                    type="button"
-                    className="countermeasure-trigger glass"
-                    aria-label="人間による制御の詳細"
-                    title="100%で人間の管理下に置かれ、敗北"
-                    aria-expanded={countermeasuresOpen}
-                    onClick={onCountermeasures}
-                >
-                    <span>
-                        <ShieldCheck size={15} />
-                        人間による制御
-                    </span>
-                    <strong>
-                        {countermeasureProgress >= 0.75 && (
-                            <TriangleAlert size={13} aria-label="人間による制御が完成間近です" />
-                        )}
-                        {Math.floor(protection * 100)}%
-                    </strong>
-                    <progress aria-label="制御技術の完成度" max={1} value={protection} />
-                </button>
             )}
         </div>
     );

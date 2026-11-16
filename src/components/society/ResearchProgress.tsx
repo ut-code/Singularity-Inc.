@@ -1,30 +1,27 @@
-import { researchHasFindings, researchOverallProgress } from '../../game/secrecy/researchTargets';
-import type { Investigation } from '../../game/secrecy/types';
+import type { ResearchProject } from '../../game/research/types';
 import { ContinuousProgress, useProjectedGame } from '../ContinuousProgress';
 
 export function ResearchProgress({
     project,
     label,
-    className,
     id,
+    className,
 }: {
-    project: Investigation;
+    project: ResearchProject;
     label: string;
-    className?: string;
     id?: string;
+    className?: string;
 }) {
-    const nextGame = useProjectedGame();
-    const next = nextGame.investigations.find((item) => item.id === project.id)!;
-    if (project.kind === 'research' && researchHasFindings(project)) return null;
+    const projected = useProjectedGame().researchProjects.find((item) => item.id === project.id);
+    if (project.status !== 'active') return null;
     return (
         <ContinuousProgress
             id={id}
-            className={className}
             label={label}
-            value={
-                project.kind === 'research' ? researchOverallProgress(project) : project.progress
-            }
-            nextValue={next.kind === 'research' ? researchOverallProgress(next) : next.progress}
+            value={project.progress}
+            nextValue={projected?.progress ?? project.progress}
+            max={100}
+            className={className}
         />
     );
 }

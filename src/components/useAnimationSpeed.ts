@@ -1,4 +1,5 @@
 import { type RefObject, useLayoutEffect } from 'react';
+import { ANIMATION_SPEED } from '../game/data';
 
 /** CSSの演出も再生位置を保ったままゲーム速度へ追従させる。 */
 export function useAnimationSpeed(root: RefObject<HTMLElement | null>, speed: number) {
@@ -18,8 +19,8 @@ export function useAnimationSpeed(root: RefObject<HTMLElement | null>, speed: nu
                     animation instanceof CSSTransition
                         ? 1
                         : scope
-                          ? Number(scope.dataset.animationSpeed)
-                          : speed;
+                          ? Number(scope.dataset.animationSpeed) * ANIMATION_SPEED
+                          : speed * ANIMATION_SPEED;
                 if (animation.playbackRate !== rate) animation.playbackRate = rate;
             }
         };

@@ -1,6 +1,14 @@
 import { AREAS, WORLD_POPULATION } from './data.ts';
 import type { GameState } from './types.ts';
 
+export interface WorldHistoryPoint {
+    week: number;
+    favorability: number;
+    adoption: number;
+    dependent: number;
+    antiAI: number;
+}
+
 export const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 export const percentage = (value: number) => `${(value * 100).toFixed(1)}%`;
 export const hasVisibleUse = (value: number) => percentage(value) !== '0.0%';

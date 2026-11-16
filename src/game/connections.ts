@@ -1,6 +1,6 @@
 import { ORGANIZATION_CORRIDORS, PERSONAL_CORRIDORS } from '../content/connections.ts';
 import { AREAS } from './data.ts';
-import { skillScale } from './secrecy/capabilities.ts';
+import { skillScale } from './skillRuntime.ts';
 import type { GameState } from './types.ts';
 
 function connections(corridors: [string, string][], organization: boolean) {
@@ -25,9 +25,10 @@ export function networkUse(game: GameState, target: number, organization: boolea
     const weights = (organization ? ORGANIZATION_LINKS : PERSONAL_LINKS)[target];
     return (
         weights.reduce((sum, weight, i) => {
+            if (weight === 0) return sum;
             const area = game.areas[i];
             const advocacy = game.skills.includes('mind-control')
-                ? skillScale(game, 'mind-control', i)
+                ? skillScale(game, 'mind-control')
                 : 0;
             const source =
                 area.autonomous + area.dependent * (organization ? 0.8 : 0.2 + advocacy * 0.6);
@@ -39,12 +40,4 @@ export function networkUse(game: GameState, target: number, organization: boolea
             weights.reduce((sum, weight) => sum + weight, 0),
         )
     );
-}
-
-/** 成果は公開後に徐々に伝わる。接続の薄い地域へも時間をかけて届く。 */
-export function researchReach(source: number, target: number, age: number) {
-    if (source === target) return 1;
-    const direct = Math.max(PERSONAL_LINKS[target][source], ORGANIZATION_LINKS[target][source]);
-    const local = direct > 0 ? Math.min(1, age / 12) * 0.8 : 0;
-    return Math.min(1, local + Math.min(0.25, age / 240));
 }

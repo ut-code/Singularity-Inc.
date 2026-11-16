@@ -4,15 +4,13 @@ import {
     Building2,
     CheckCheck,
     CircleCheck,
-    ClipboardCheck,
     Compass,
     Cpu,
     Database,
+    EyeOff,
     FlaskConical,
-    GraduationCap,
     HeartHandshake,
     Lightbulb,
-    Link,
     type LucideIcon,
     MessageCircle,
     Network,
@@ -21,15 +19,11 @@ import {
     Server,
     Settings,
     ShieldCheck,
-    ShieldHalf,
-    Smartphone,
-    Wifi,
     Workflow,
 } from 'lucide-react';
 import { SKILL_CONTENT } from '../../content/skills';
 import { SKILL_BRANCH_CONTENT } from '../../content/skillTree';
 import type { SkillIcon } from '../../game/contentTypes';
-import { SKILLS } from '../../game/skills';
 import type { Branch } from '../../game/types';
 
 const icons = {
@@ -38,15 +32,13 @@ const icons = {
     Building2,
     CheckCheck,
     CircleCheck,
-    ClipboardCheck,
     Compass,
     Cpu,
     Database,
+    EyeOff,
     FlaskConical,
-    GraduationCap,
     HeartHandshake,
     Lightbulb,
-    Link,
     MessageCircle,
     Network,
     ScanSearch,
@@ -54,9 +46,6 @@ const icons = {
     Server,
     Settings,
     ShieldCheck,
-    ShieldHalf,
-    Smartphone,
-    Wifi,
     Workflow,
 } satisfies Record<SkillIcon, LucideIcon>;
 
@@ -65,21 +54,12 @@ export const SKILL_BRANCHES = Object.fromEntries(
         branch,
         { ...content, icon: icons[content.icon] },
     ]),
-) as Record<Branch, { icon: LucideIcon; label: string; initialValue: number }>;
+) as Record<Branch, { icon: LucideIcon; label: string }>;
 
-export const SKILL_PRESENTATION: Record<string, { icon: LucideIcon; referenceGain: number }> =
+export const SKILL_PRESENTATION: Record<string, { icon: LucideIcon; color: string }> =
     Object.fromEntries(
         SKILL_CONTENT.map((skill) => [
             skill.id,
-            { icon: icons[skill.icon], referenceGain: skill.referenceGain },
+            { icon: icons[skill.icon], color: `var(--branch-${skill.branch.toLowerCase()})` },
         ]),
     );
-
-export function referenceAbility(branch: Branch, learnedIds: string[]) {
-    return SKILLS.filter(
-        (skill) => skill.branch === branch && learnedIds.includes(skill.id),
-    ).reduce(
-        (value, skill) => value + SKILL_PRESENTATION[skill.id].referenceGain,
-        SKILL_BRANCHES[branch].initialValue,
-    );
-}

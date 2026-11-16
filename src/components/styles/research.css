@@ -63,11 +63,11 @@
     position: relative;
     min-width: 0;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
     touch-action: none;
-    cursor: grab;
+    cursor: default;
     user-select: none;
-    background-image: linear-gradient(#101820ef, #101820ef), url("/images/skill-circuit.svg");
+    background-image: linear-gradient(#0d1319f2, #0d1319f2), url("/images/skill-circuit.svg");
     background-size:
         auto,
         608px 608px;
@@ -253,8 +253,10 @@
 .skill-details .skill-countermeasure {
     color: var(--warning);
 }
-.tree-node-content .tree-suppression {
-    margin-left: auto;
+.tree-node .tree-suppression {
+    position: absolute;
+    right: 8px;
+    bottom: 7px;
     color: var(--warning);
     font-size: 10px;
     font-weight: 600;
@@ -300,10 +302,10 @@
     background: var(--line);
 }
 .skill-effectiveness-bar::-webkit-meter-optimum-value {
-    background: var(--accent);
+    background: var(--warning);
 }
 .skill-effectiveness-bar::-moz-meter-bar {
-    background: var(--accent);
+    background: var(--warning);
 }
 .skill-effectiveness-causes {
     display: flex;
@@ -320,10 +322,10 @@
 .skill-effectiveness-causes b {
     font-weight: 500;
 }
-.skill-details .skill-local-limit {
-    margin: 5px 0;
-    color: var(--text-secondary);
-    font-size: 11px;
+.skill-restriction-source {
+    margin-left: 14px;
+    color: var(--muted);
+    font-size: inherit;
 }
 .performance-skill-info .performance-skill-suppression {
     color: var(--warning);
@@ -336,6 +338,9 @@
     align-items: center;
     gap: 5px;
     color: var(--warning);
+}
+.skill-traits .dependency-trait {
+    color: #b3a2bd;
 }
 .skill-restraints {
     margin: 16px 0;
@@ -399,6 +404,35 @@
     margin: 22px 0 8px;
     color: var(--muted);
     font-weight: 500;
+}
+.skill-effect-list {
+    margin: 16px 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+.skill-effect-list ul {
+    margin: 0;
+    padding-left: 16px;
+    list-style: disc;
+}
+.skill-effect-list li {
+    padding: 4px 0;
+}
+.skill-effect-detail {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+.skill-effect-list h3 {
+    margin: 0 0 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+.skill-drawbacks {
+    color: var(--warning);
 }
 .skill-detail-cost {
     display: flex;

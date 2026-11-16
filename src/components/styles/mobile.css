@@ -168,7 +168,7 @@
         grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
     }
     .tree-viewport {
-        overflow: auto;
+        overflow: hidden;
     }
     .skill-tree {
         width: 100%;

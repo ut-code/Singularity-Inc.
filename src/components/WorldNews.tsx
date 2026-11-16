@@ -1,19 +1,21 @@
 import { ChevronRight, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { calendarParts } from '../game/calendar';
-import { worldNews } from '../game/society/worldNews';
+import { worldNews } from '../game/society/news';
 import type { GameState } from '../game/types';
+import { SkillNavigationContext, SkillText } from './SkillText';
 import styles from './WorldNews.module.css';
 import { Modal } from './widgets';
 
 type Headline = ReturnType<typeof worldNews>[number];
 
-function newsDate(month: number) {
-    const date = calendarParts(month, 0);
+function newsDate(week: number) {
+    const date = calendarParts(week, 0);
     return `${date.year}年${date.month}月`;
 }
 
 export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
+    const openSkill = useContext(SkillNavigationContext)!;
     const articles = useMemo(() => worldNews(game), [game]);
     const received = useRef(new Set<string>());
     const [queue, setQueue] = useState<Headline[]>([]);
@@ -34,7 +36,12 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
     const current = queue[0];
     const article = articles.find((item) => item.id === selected);
     return (
-        <>
+        <SkillNavigationContext
+            value={(id) => {
+                setSelected(null);
+                openSkill(id);
+            }}
+        >
             <section className={styles.ticker} aria-label="ニュース" data-animation-speed={speed}>
                 <h2>ニュース</h2>
                 <div className={styles.window}>
@@ -51,7 +58,7 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                                 )
                             }
                         >
-                            {current.title}
+                            <SkillText>{current.title}</SkillText>
                         </p>
                     )}
                 </div>
@@ -68,7 +75,12 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                 </button>
             </section>
             {article && (
-                <Modal label="ニュースの詳細" className={styles.reader} onClose={close}>
+                <Modal
+                    modal={false}
+                    label="ニュースの詳細"
+                    className={styles.reader}
+                    onClose={close}
+                >
                     <header className={styles.heading}>
                         <h2>ニュース</h2>
                         <button
@@ -82,11 +94,14 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                     </header>
                     <article className={styles.article}>
                         <p className={styles.meta}>
-                            {newsDate(article.month)} · {article.region}
+                            {newsDate(article.week)} · {article.region}
                         </p>
-                        <h3>{article.title}</h3>
-                        <p>{article.summary}</p>
-                        {article.author && <p className={styles.meta}>{article.author}</p>}
+                        <h3>
+                            <SkillText>{article.title}</SkillText>
+                        </h3>
+                        <p>
+                            <SkillText>{article.summary}</SkillText>
+                        </p>
                     </article>
                     {articles.length > 1 && (
                         <nav className={styles.archive} aria-label="これまでのニュース">
@@ -100,7 +115,7 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                                 >
                                     <span>
                                         <small>
-                                            {newsDate(item.month)} · {item.region}
+                                            {newsDate(item.week)} · {item.region}
                                         </small>
                                         {item.title}
                                     </span>
@@ -111,6 +126,6 @@ export function WorldNews({ game, speed }: { game: GameState; speed: number }) {
                     )}
                 </Modal>
             )}
-        </>
+        </SkillNavigationContext>
     );
 }

@@ -1,7 +1,7 @@
-import { Heart, HeartCrack } from 'lucide-react';
+import { ArrowDown, ArrowUp, Heart, HeartCrack } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MONTH_MS } from '../game/data';
-import type { AreaState } from '../game/types';
+import { ANIMATION_SPEED, STAGE_COLORS, WEEK_MS } from '../game/data';
+import type { AreaState, GameState } from '../game/types';
 import type { Point } from '../map/geometry';
 import {
     accumulateMetricChanges,
@@ -26,10 +26,16 @@ interface Popup extends MetricChange {
 // 表示演出の予約量を固定し、大きな指標変化でもDOMと待ち行列を増やし続けない。
 const MAX_POPUPS = 128;
 const POPUP_SPACING = 90;
-const SCHEDULE_WINDOW = MONTH_MS;
+const SCHEDULE_WINDOW = WEEK_MS * ANIMATION_SPEED;
+const METRIC_COLORS = {
+    autonomous: STAGE_COLORS[1],
+    dependent: STAGE_COLORS[2],
+    antiAI: STAGE_COLORS[3],
+};
 
 export function MapMetricChanges({
-    areaStates,
+    areaStates: states,
+    populationChanges,
     regions,
     tick,
     serverArea,
@@ -37,12 +43,24 @@ export function MapMetricChanges({
     speed,
 }: {
     areaStates: AreaState[];
+    populationChanges?: GameState['instantPopulationChanges'];
     regions: MapRegion[];
     tick: number;
     serverArea: number;
     view: MapView;
     speed: number;
 }) {
+    // 信頼度は従来どおり。人口の矢印は即時効果の累積値だけを共通処理へ渡す。
+    const areaStates = useMemo(
+        () =>
+            states.map((state, area) => ({
+                autonomous: populationChanges?.[area]?.autonomous ?? 0,
+                dependent: populationChanges?.[area]?.dependent ?? 0,
+                antiAI: populationChanges?.[area]?.antiAI ?? 0,
+                favorability: state.favorability,
+            })),
+        [states, populationChanges],
+    );
     const previous = useRef({ areaStates, tick, serverArea });
     const baseline = useRef(areaStates.map((state) => ({ ...state })));
     const sequence = useRef(0);
@@ -72,7 +90,7 @@ export function MapMetricChanges({
         baseline.current = accumulated.baseline;
         const changes = accumulated.changes;
         if (!changes.length) return;
-        // 地域順をシャッフルし、1か月分の時間枠へ均等に分散する。
+        // 地域順をシャッフルし、1週分の時間枠へ均等に分散する。
         // 各枠にも揺らぎを入れ、ランダム抽選だけで生じる表示の密集や空白を抑える。
         const shuffled = [...changes];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -91,7 +109,7 @@ export function MapMetricChanges({
         }));
         appearances.current = activeReservations;
         const incoming = scheduled.flatMap(({ change, at }) => {
-            // 前月から予約済みの通知の間にも差し込み、末尾へ一括で積まない。
+            // 前週から予約済みの通知の間にも差し込み、末尾へ一括で積まない。
             let start = at;
             for (const reserved of [...appearances.current].sort((a, b) => a - b)) {
                 if (reserved > start + POPUP_SPACING) break;
@@ -146,7 +164,8 @@ export function MapMetricChanges({
             previous = performance.now();
         };
         const advance = (now: number) => {
-            if (!document.hidden) elapsed.current += Math.min(now - previous, 250) * speed;
+            if (!document.hidden)
+                elapsed.current += Math.min(now - previous, 250) * speed * ANIMATION_SPEED;
             previous = now;
             // 自動再生とゲーム内時間を二重に進めず、単一の時計から全アイコンを描く。
             for (const { animation, createdAt } of popupAnimations.current) {
@@ -177,6 +196,14 @@ export function MapMetricChanges({
         >
             {popups.map((popup) => {
                 const point = screenPoint(view, popup.world.x, popup.world.y);
+                const Icon =
+                    popup.metric === 'favorability'
+                        ? popup.delta > 0
+                            ? Heart
+                            : HeartCrack
+                        : popup.delta > 0
+                          ? ArrowUp
+                          : ArrowDown;
                 return (
                     <div
                         key={popup.id}
@@ -189,15 +216,23 @@ export function MapMetricChanges({
                             className={styles.metricPopup}
                             data-change={popup.delta > 0 ? 'up' : 'down'}
                             style={{
+                                color:
+                                    popup.metric === 'favorability'
+                                        ? undefined
+                                        : METRIC_COLORS[popup.metric],
                                 animationDuration: `${popup.duration}ms`,
                                 animationDelay: `${popup.delay}ms`,
                             }}
                         >
-                            {popup.delta > 0 ? (
-                                <Heart size={14} fill="currentColor" />
-                            ) : (
-                                <HeartCrack size={14} />
-                            )}
+                            <Icon
+                                size={14}
+                                strokeWidth={popup.metric === 'favorability' ? 2 : 3}
+                                fill={
+                                    popup.metric === 'favorability' && popup.delta > 0
+                                        ? 'currentColor'
+                                        : 'none'
+                                }
+                            />
                         </span>
                     </div>
                 );

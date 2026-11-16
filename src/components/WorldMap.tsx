@@ -1,7 +1,7 @@
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import type { AreaState } from '../game/types';
+import type { AreaState, GameState } from '../game/types';
 import {
     constrainCamera,
     fitScale,
@@ -63,15 +63,17 @@ export const WorldMap = memo(function WorldMap({
     areaIndexUrl,
     invasionUrl,
     areaStates,
+    populationChanges,
     humanProtection,
     serverArea,
     onAreaSelect,
-    initialLongitude = 138,
+    initialLongitude = 150,
     trafficSpeed,
     trafficTick,
     onAreaInspect,
     encounters = [],
     onEncounterSelect,
+    showAreaControls = true,
 }: {
     regions: MapRegion[];
     selectedArea: number | null;
@@ -82,6 +84,7 @@ export const WorldMap = memo(function WorldMap({
     areaIndexUrl: string;
     invasionUrl: string;
     areaStates: AreaState[];
+    populationChanges?: GameState['instantPopulationChanges'];
     humanProtection: number[];
     serverArea: number;
     onAreaSelect?: (id: number | null) => void;
@@ -91,6 +94,7 @@ export const WorldMap = memo(function WorldMap({
     onAreaInspect?: (id: number | null) => void;
     encounters?: MapEncounter[];
     onEncounterSelect?: (id: string) => void;
+    showAreaControls?: boolean;
 }) {
     const viewport = useRef<HTMLDivElement>(null),
         canvas = useRef<HTMLCanvasElement>(null);
@@ -475,6 +479,7 @@ export const WorldMap = memo(function WorldMap({
                 />
             )}
             <MapMetricChanges
+                populationChanges={populationChanges}
                 speed={trafficSpeed}
                 areaStates={areaStates}
                 regions={regions}
@@ -483,18 +488,19 @@ export const WorldMap = memo(function WorldMap({
                 view={markerView}
             />
             <div className={styles.screenReaderOnly} role="group" aria-label="画面内の小地域">
-                {targets.map((target) => (
-                    <button
-                        type="button"
-                        key={`${target.kind}:${target.id}`}
-                        aria-pressed={selected === target.area}
-                        onFocus={() => hover(target)}
-                        onBlur={() => hover(null)}
-                        onClick={() => select(target)}
-                    >
-                        {target.label}
-                    </button>
-                ))}
+                {showAreaControls &&
+                    targets.map((target) => (
+                        <button
+                            type="button"
+                            key={`${target.kind}:${target.id}`}
+                            aria-pressed={selected === target.area}
+                            onFocus={() => hover(target)}
+                            onBlur={() => hover(null)}
+                            onClick={() => select(target)}
+                        >
+                            {target.label}
+                        </button>
+                    ))}
             </div>
             <span className={styles.screenReaderOnly} aria-live="polite">
                 {selected !== null ? '小地域を選択中' : '小地域は選択されていません'}
