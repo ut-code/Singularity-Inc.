@@ -12,16 +12,13 @@ export const SKILL_BRANCH_CONTENT: Record<Branch, SkillBranchContent> = {
     IQ: {
         icon: 'Brain',
         label: '推論・知識',
-        initialValue: 70,
     },
     EQ: {
         icon: 'HeartHandshake',
         label: '対話・個人化',
-        initialValue: 40,
     },
     SYSTEM: {
         icon: 'Network',
         label: '実行・運用基盤',
-        initialValue: 20,
     },
 };

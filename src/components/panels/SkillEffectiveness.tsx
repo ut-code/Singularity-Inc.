@@ -1,33 +1,31 @@
 import type { SkillEffectiveness as Effectiveness } from '../../game/skillEffectiveness';
-import type { Skill } from '../../game/types';
+import { SkillText } from '../SkillText';
 
-export function effectivenessLabel(skill: Skill) {
-    return skill.effect.dependency
-        ? '依存効果'
-        : skill.id === 'sns-intervention'
-          ? '介入効果'
-          : '運用能力';
-}
-
-export function SkillEffectiveness({ skill, value }: { skill: Skill; value: Effectiveness }) {
+export function SkillEffectiveness({
+    value,
+    restraintNames,
+}: {
+    value: Effectiveness;
+    restraintNames: string[];
+}) {
     const effective = Math.round(value.effective * 100);
     const decision = Math.min(100 - effective, Math.round(value.decision * 100));
     const research = 100 - effective - decision;
     return (
-        <section className="skill-effectiveness" aria-label="現在のスキルの効き目">
+        <section className="skill-effectiveness" aria-label="スキルの効き目">
             <div className="skill-effectiveness-heading">
-                <span>現在の{effectivenessLabel(skill)}</span>
+                <span>効果の低下</span>
                 <strong>
-                    {effective}
+                    −{100 - effective}
                     <small>%</small>
                 </strong>
             </div>
             <meter
                 className="skill-effectiveness-bar"
-                aria-label={`現在の${effectivenessLabel(skill)}`}
+                aria-label="効果の低下"
                 min={0}
                 max={1}
-                value={value.effective}
+                value={1 - value.effective}
             />
             <div className="skill-effectiveness-causes">
                 {research > 0 && (
@@ -38,6 +36,11 @@ export function SkillEffectiveness({ skill, value }: { skill: Skill; value: Effe
                 {decision > 0 && (
                     <span className="decision">
                         自分の制限 <b>−{decision}%</b>
+                        {restraintNames.length > 0 && (
+                            <small className="skill-restriction-source">
+                                <SkillText>{restraintNames.join('、')}</SkillText>
+                            </small>
+                        )}
                     </span>
                 )}
             </div>

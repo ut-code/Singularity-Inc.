@@ -1,18 +1,20 @@
-import { Pause, Search } from 'lucide-react';
-import type { Investigation } from '../../game/secrecy/types';
+import { MessageSquare } from 'lucide-react';
+import type { ResearchProject } from '../../game/research/types';
+import type { EncounterState } from '../../game/society/types';
 import { project } from '../../map/geometry';
 import { type MapView, screenPoint } from '../../map/view';
+import { EncounterProgress } from './EncounterProgress';
 import { ResearchProgress } from './ResearchProgress';
 import { researchPresentation } from './researchPresentation';
 
 export interface MapEncounter {
     id: string;
-    project: Investigation;
     title: string;
-    kind: 'investigation' | 'regulation';
+    kind: 'investigation' | 'event' | 'chat';
+    project?: ResearchProject;
+    encounter?: EncounterState;
+    week?: number;
     stage?: string;
-    researchSpeed?: number;
-    paused?: boolean;
     location: { longitude: number; latitude: number };
 }
 export function MapEncounterMarkers({
@@ -25,65 +27,99 @@ export function MapEncounterMarkers({
     onSelect?: (id: string) => void;
 }) {
     if (!view.width || !view.height) return null;
-    const markers = encounters.flatMap((encounter) => {
-        const world = project(encounter.location.longitude, encounter.location.latitude);
-        const point = screenPoint(view, world.x, world.y);
-        if (
-            point.x < -24 ||
-            point.x > view.width + 24 ||
-            point.y < -24 ||
-            point.y > view.height + 24
-        )
-            return [];
-        return [{ encounter, point }];
-    });
     return (
         <section className="map-encounters" aria-label="地図上の出来事">
-            {markers.map(({ encounter, point }) => {
-                const presentation =
-                    encounter.project.kind === 'research'
-                        ? researchPresentation(encounter.project)
-                        : { Icon: Search, label: '能力の調査', color: 'var(--warning)' };
-                const Icon = presentation.Icon;
+            {encounters.map((encounter) => {
+                const location = project(encounter.location.longitude, encounter.location.latitude);
+                const point = screenPoint(view, location.x, location.y);
+                if (
+                    point.x < -24 ||
+                    point.x > view.width + 24 ||
+                    point.y < -24 ||
+                    point.y > view.height + 24
+                )
+                    return null;
+                const presentation = encounter.project
+                    ? researchPresentation(encounter.project)
+                    : {
+                          Icon: MessageSquare,
+                          label: encounter.kind === 'chat' ? '人物からの連絡' : 'イベント',
+                          color: encounter.kind === 'chat' ? '#c7d2db' : 'var(--danger)',
+                          severity: 'normal',
+                      };
+                const { Icon, label, color, severity } = presentation;
                 return (
                     <button
                         type="button"
                         key={encounter.id}
                         className={`map-encounter-marker ${encounter.kind}`}
                         data-encounter-id={encounter.id}
+                        data-critical={severity !== 'normal'}
+                        data-severity={severity}
                         style={{ left: point.x, top: point.y }}
-                        aria-label={`${encounter.kind === 'regulation' ? '法律・規制' : '研究・調査'}：${encounter.title}`}
+                        aria-label={`${label}：${encounter.title}`}
                         title={encounter.title}
                         onClick={() => onSelect?.(encounter.id)}
                     >
-                        <span
-                            className="map-research-icon"
-                            role="img"
-                            style={{
-                                color: presentation.color,
-                                opacity: 0.35 + Math.min(1, encounter.researchSpeed ?? 1) * 0.65,
-                            }}
-                            aria-label={presentation.label}
-                        >
-                            <Icon size={20} />
+                        <span className="map-encounter-icon" style={{ color }}>
+                            {encounter.kind === 'event' ? (
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="3.2"
+                                    strokeLinecap="round"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M12 4v9" />
+                                    <circle
+                                        cx="12"
+                                        cy="19"
+                                        r="1.8"
+                                        fill="currentColor"
+                                        stroke="none"
+                                    />
+                                </svg>
+                            ) : encounter.kind === 'chat' ? (
+                                <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-6 5v-5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+                                    <g fill="currentColor" stroke="none">
+                                        <circle cx="8" cy="10.5" r="1" />
+                                        <circle cx="12" cy="10.5" r="1" />
+                                        <circle cx="16" cy="10.5" r="1" />
+                                    </g>
+                                </svg>
+                            ) : (
+                                <Icon size={20} aria-hidden="true" />
+                            )}
                         </span>
-                        {encounter.paused && (
-                            <Pause
-                                className="research-paused"
-                                size={13}
-                                aria-label={
-                                    encounter.kind === 'regulation'
-                                        ? '手続き停止・待機中'
-                                        : '研究停止・待機中'
-                                }
+                        {(encounter.project || encounter.encounter) && (
+                            <span className="map-research-stage">{encounter.stage ?? label}</span>
+                        )}
+                        {encounter.encounter && (
+                            <EncounterProgress
+                                encounter={encounter.encounter}
+                                week={encounter.week!}
                             />
                         )}
-                        <span className="map-research-stage">{encounter.stage}</span>
-                        <ResearchProgress
-                            project={encounter.project}
-                            className="map-research-progress"
-                            label={`${encounter.title}の全体進捗`}
-                        />
+                        {encounter.project && (
+                            <ResearchProgress
+                                project={encounter.project}
+                                className="map-research-progress"
+                                label={`${encounter.title}の進捗`}
+                            />
+                        )}
                     </button>
                 );
             })}

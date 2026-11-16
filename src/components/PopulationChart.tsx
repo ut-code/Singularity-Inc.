@@ -8,8 +8,10 @@ export function PopulationChart({ values, total }: { values: number[]; total: nu
     return (
         <svg className="population-chart" viewBox="0 0 100 100" role="img" aria-label={description}>
             <title>AIに対する態度の人口比率</title>
+            <circle cx="50" cy="50" r="46" fill={STAGE_COLORS[0]} />
             {values.map((value, index) => {
-                if (value <= 0) return null;
+                // 未使用者は円の土台にし、ほぼ100%の扇形を描く際の欠落を避ける。
+                if (index === 0 || value <= 0) return null;
                 const title = `${STAGES[index]} ${percent(value)}・${population(value * total)}`;
                 if (value >= 1 - 1e-10)
                     return (

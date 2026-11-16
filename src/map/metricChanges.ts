@@ -2,7 +2,12 @@ import type { AreaState } from '../game/types.ts';
 
 export const METRIC_CHANGE_THRESHOLD = 0.01;
 export const METRIC_CHANGE_DURATION = 2400;
-export const MAP_METRICS = [{ key: 'favorability', label: 'AI好感度' }] as const;
+export const MAP_METRICS = [
+    { key: 'favorability', label: '信頼度' },
+    { key: 'autonomous', label: 'AI通常利用' },
+    { key: 'dependent', label: 'AI依存' },
+    { key: 'antiAI', label: 'AI利用拒否' },
+] as const;
 
 export interface MetricChange {
     area: number;

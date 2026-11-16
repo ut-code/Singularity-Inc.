@@ -1,6 +1,6 @@
-import { AREAS, WORLD_POPULATION } from './data.ts';
+import { AREAS } from './data.ts';
 import { clamp } from './metrics.ts';
-import { skillScale } from './secrecy/capabilities.ts';
+import { playerRestrictionScale, skillScale } from './skillRuntime.ts';
 import { SKILLS } from './skills.ts';
 import type { GameState, Skill, SkillDomain } from './types.ts';
 
@@ -18,62 +18,31 @@ export function skillReadiness(game: GameState, index: number, skill: Skill) {
             return clamp((use - 0.08) / 0.5) * (0.35 + definition.enterprise * 0.9);
         case 'personal':
             return clamp((use - 0.12) / 0.45) * (0.8 + (1 - definition.enterprise) * 0.35);
-        case 'learning':
-            return clamp((use - 0.08) / 0.45) * (0.3 + definition.education * 1.1);
+        case 'judgment':
+            return clamp((use - 0.08) / 0.45);
     }
     return 0;
 }
 
-export function deployedDependency(
-    game: GameState,
-    index: number,
-    resistance: Record<string, number> = {},
-) {
-    const deployed = { work: 0, personal: 0, learning: 0, consensual: 0 };
+export function deployedDependency(game: GameState, index: number, ignoreResearch = false) {
+    const deployed = { work: 0, personal: 0, judgment: 0, consensual: 0 };
+    const iqCount = SKILLS.filter(
+        (skill) =>
+            skill.branch === 'IQ' &&
+            game.skills.includes(skill.id) &&
+            game.developmentProgress[skill.id] >= 1,
+    ).length;
     for (const skill of SKILLS) {
         const effect = skill.effect;
-        if (!effect.dependency || !game.skills.includes(skill.id)) continue;
+        if (!game.skills.includes(skill.id) || game.developmentProgress[skill.id] < 1) continue;
+        const dependency = (effect.dependency ?? 0) + (effect.iqDependency ?? 0) * iqCount;
+        if (dependency === 0) continue;
         const strength =
-            effect.dependency *
-            skillScale(game, skill.id, index) *
-            skillReadiness(game, index, skill) *
-            (1 - (resistance[skill.id] ?? 0));
+            dependency *
+            (ignoreResearch ? playerRestrictionScale(game, skill.id) : skillScale(game, skill.id)) *
+            skillReadiness(game, index, skill);
         deployed[DEPENDENCY_DOMAINS[skill.id]] += strength;
         if (!skill.exceedsAuthority) deployed.consensual += strength;
     }
     return deployed;
-}
-
-/** 観測資料は実際の運用から蓄積する。制約技術で挙動を変えても過去の資料は残る。 */
-export function observeSkillUse(game: GameState) {
-    const exposure = { ...game.skillExposure };
-    for (const skill of SKILLS) {
-        const effect = skill.effect;
-        if (!game.skills.includes(skill.id)) continue;
-        const utility = (effect.quality ?? 0) + (effect.enterprise ?? 0) + (effect.education ?? 0);
-        const reach = game.areas.reduce(
-            (sum, area, index) =>
-                sum +
-                ((area.autonomous + area.dependent) *
-                    (effect.dependency
-                        ? skillReadiness(game, index, skill)
-                        : skill.exceedsAuthority
-                          ? 1
-                          : utility * 0.04) *
-                    skillScale(game, skill.id, index) *
-                    AREAS[index].population) /
-                    WORLD_POPULATION,
-            0,
-        );
-        exposure[skill.id] += reach;
-    }
-    return exposure;
-}
-
-export function domainExposure(game: GameState, domain: SkillDomain | 'general') {
-    return Object.entries(game.skillExposure).reduce(
-        (sum, [id, exposure]) =>
-            sum + (domain === 'general' || DEPENDENCY_DOMAINS[id] === domain ? exposure : 0),
-        0,
-    );
 }

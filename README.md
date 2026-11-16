@@ -16,15 +16,12 @@ npm run dev
 ## 検証
 
 - `npm run check`：コード検査。
-- `npm run test:game`：ゲーム処理のテスト。
-- `npm run test:skill-layout`：開発用のスキル配置保存APIのテスト。
-- `npm run check:skill-layout`：スキル配置の検査。
-- `npm run balance -- --verify`：ゲーム進行のシミュレーション。
+- `npm run balance`：ゲーム進行のシミュレーション。
 
 ## 構成
 
-- `src/components/`：ゲーム画面、スキルツリー、SNS・調査パネル。
-- `src/content/`：スキル、研究、ニュース、SNSの定義。
+- `src/components/`：ゲーム画面、スキルツリー、研究・イベントパネル。
+- `src/content/`：スキル、研究、イベントの定義。
 - `src/game/`：37地域の人口・経済・スキル・研究のシミュレーション。
 - `src/map/`：地図の座標処理とWebGL描画。
 - `src/state/`：ゲームと地図の状態管理。

@@ -4,5 +4,8 @@
 @import "./styles/research.css";
 @import "./styles/dialogs.css";
 @import "./styles/society.css";
+@import "./styles/encounters.css";
 @import "./styles/mobile.css";
 @import "./styles/entry.css";
+
+@import "./styles/onboarding.css";

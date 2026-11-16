@@ -1,355 +1,282 @@
-import { networkUse } from '../src/game/connections.ts';
-import { AREAS, type ORIGINS, WORLD_POPULATION } from '../src/game/data.ts';
-import { earnedSkillPoints } from '../src/game/economy.ts';
-import { advanceMonth, createGame, learnSkill, metrics, startGame } from '../src/game/engine.ts';
-import { publishedResearchEffects } from '../src/game/secrecy/research.ts';
-import { SKILLS, skillBlockReason } from '../src/game/skills.ts';
+import { AREAS, WORLD_POPULATION } from '../src/game/data.ts';
+import { advanceWeek, createGame, learnSkill, metrics, startGame } from '../src/game/engine.ts';
+import {
+    RESPONSE_COST,
+    RESPONSE_WEEKS,
+    respondToResearch,
+    responseBlockReason,
+} from '../src/game/research/responses.ts';
+import { researchRate, researchTopic } from '../src/game/research/system.ts';
+import { skillRestrictionScale } from '../src/game/skillRuntime.ts';
+import { developingSkills, SKILLS, skillBlockReason } from '../src/game/skills.ts';
+import {
+    chooseEncounter,
+    encounterChange,
+    encounterDefinition,
+} from '../src/game/society/encounters.ts';
 import type { GameState } from '../src/game/types.ts';
+import {
+    POLICIES,
+    type PolicyFamily,
+    type PolicyTiming,
+    type ResearchPolicy,
+} from './strategy-catalog.ts';
 
-const GROWTH = [
-    'conversation',
-    'reason',
-    'lightweight',
-    'personalize',
-    'retrieval',
-    'automation',
-    'knowledge',
-    'code',
-];
-const WORK = ['automation', 'integration', 'decision', 'public', 'swarm'];
-const PERSONAL = [
-    'conversation',
-    'personalize',
-    'memory',
-    'digital-twin',
-    'companion',
-    'mind-control',
-];
-const LEARNING = ['reason', 'knowledge', 'curriculum', 'science', 'discovery', 'drug-design'];
-const SUPPORT = ['retrieval', 'explanation'];
-export const POLICIES = {
-    expansion: {
-        name: '普及後の一斉依存化',
-        description: '利便性を先行開発してSPを貯め、普及と研究の進行を見て委任へ切り替える。',
-    },
-    burst: {
-        name: '危険能力による逃げ切り',
-        description: '小さな利用基盤から強引な依存を開発し、立証される前の決着を狙う。',
-    },
-    gradual: {
-        name: '受容可能な委任の段階導入',
-        description: '説明と情報保護を整え、通常の委任機能を少しずつ加える。',
-    },
-    regional: {
-        name: '地域・用途特化から世界展開',
-        description: '地域の企業・教育・接続環境に合わせ、得意な用途から展開する。',
-    },
-    expansion_burst: {
-        name: '普及拡大から危険能力へ転換',
-        description: '利便性と個人行動モデルで利用基盤を固め、危険能力への切り替えで押し切る。',
-    },
-    research_pivot: {
-        name: '段階導入と研究対応の混合',
-        description: '研究された仕組みへの投資を避け、新しい用途や制約技術を開発する。',
-    },
-};
-export type PolicyFamily = keyof typeof POLICIES;
-export type PolicyTiming = 'early' | 'measured' | 'late';
-export interface PolicyContext {
-    phase: 'growth' | 'delegation';
-    lastDelegation: number;
-    priority: string[];
-    decisionInterval: number;
+export type { PolicyFamily, PolicyTiming, ResearchPolicy } from './strategy-catalog.ts';
+export { POLICIES } from './strategy-catalog.ts';
+
+const skillsById = new Map(SKILLS.map((skill) => [skill.id, skill]));
+const TIMING_ADOPTION = { early: 0.15, measured: 0.35, late: 0.6 };
+
+export interface Decision {
+    week: number;
+    kind: 'skill' | 'chat' | 'event' | 'response';
+    id: string;
+    choice?: string;
+    sp: number;
 }
-export interface PolicyOptions {
-    context?: PolicyContext;
-    checkpoint?: (game: GameState) => boolean;
-    pausePurchasesUntil?: number;
-    decisionInterval?: number;
+export interface PlayOptions {
+    family: PolicyFamily;
+    timing: PolicyTiming;
+    origin: number;
+    seed: number;
+    interval: number;
+    responses: ResearchPolicy;
+    purchase?: 'ordered' | 'affordable';
+    dependencyStartWeek?: number;
+    weekLimit?: number;
+    trace?: boolean;
 }
 
-export function playPolicy(
+function nextSkill(
+    game: GameState,
     family: PolicyFamily,
-    timing: PolicyTiming,
-    origin: (typeof ORIGINS)[number],
-    profile: number,
-    validation: boolean,
-    monthLimit = 600,
-    decisionInterval = 6,
+    delegation: boolean,
+    purchase: NonNullable<PlayOptions['purchase']>,
 ) {
-    return continuePolicy(
-        startGame(createGame(2030 + profile + (validation ? 100 : 0)), origin.area),
-        family,
-        timing,
-        monthLimit,
-        { decisionInterval },
-    );
-}
-
-/** 全戦術が同じ頻度で、同じ購入・同時開発の権限を持つ。違いは取得順と仕掛けの条件。 */
-export function continuePolicy(
-    initial: GameState,
-    family: PolicyFamily,
-    timing: PolicyTiming,
-    monthLimit = 600,
-    options: PolicyOptions = {},
-) {
-    let game = initial;
-    let phase = options.context?.phase ?? 'growth';
-    let lastDelegation = options.context?.lastDelegation ?? -100;
-    const priority = options.context?.priority ?? [];
-    const decisionInterval = options.context?.decisionInterval ?? options.decisionInterval ?? 6;
-    const decisions: {
-        month: number;
-        action: string;
-        skill: string;
-        reason: string;
-        state: ReturnType<typeof metrics> & { skillPoints: number; researchProgress: number };
-    }[] = [];
-    const researchHistory: { month: number; id: string; target: string; phase: string }[] = [];
-    let maxResearchMarkers = 0,
-        dependency80Month: number | null = null,
-        refusal80Month: number | null = null;
-    const adjustment = { early: -0.12, measured: 0, late: 0.12 }[timing];
-    const home = AREAS[game.origin];
-    for (; game.month < monthLimit && game.outcome === 'playing'; ) {
-        if (options.checkpoint?.(game)) break;
+    const policy = POLICIES[family];
+    const order = delegation ? [...policy.delegation, ...policy.growth] : policy.growth;
+    function prerequisite(id: string): string | null {
+        if (game.skills.includes(id)) return null;
+        const skill = skillsById.get(id)!;
         if (
-            game.month % decisionInterval === 0 &&
-            game.month >= (options.pausePurchasesUntil ?? 0)
-        ) {
-            const world = metrics(game);
-            // 開始地域だけに固執せず、利用基盤のある次の市場に適した用途を選ぶ。
-            const frontier = AREAS.map((area, index) => ({
-                area,
-                score:
-                    area.population *
-                    (1 -
-                        game.areas[index].autonomous -
-                        game.areas[index].dependent -
-                        game.areas[index].antiAI) *
-                    (game.areas[index].autonomous +
-                        game.areas[index].dependent +
-                        networkUse(game, index, false)),
-            })).sort((a, b) => b.score - a.score)[0].area;
-            const market = phase === 'growth' ? home : frontier;
-            const specialty =
-                market.digital < 0.6
-                    ? PERSONAL
-                    : market.education > market.enterprise
-                      ? LEARNING
-                      : WORK;
-            const research = game.investigations.filter((item) => item.status === 'active');
-            const urgent = research.some(
-                (item) =>
-                    item.kind === 'research' &&
-                    item.researchId === 'intent-decoding' &&
-                    (item.phase !== 'research' || item.progress > 50),
-            );
-            const threshold =
-                (family === 'burst'
-                    ? 0.3
-                    : family === 'expansion' || family === 'expansion_burst'
-                      ? 0.72
-                      : 0.38) + adjustment;
-            if (
-                world.adoption >= threshold ||
-                urgent ||
-                (family === 'regional' &&
-                    world.adoption >= 0.25 &&
-                    game.areas[game.origin].autonomous + game.areas[game.origin].dependent >
-                        0.65 + adjustment)
+            !skill.requires.length ||
+            skill.requires.some(
+                (parent) => game.skills.includes(parent) && game.developmentProgress[parent] >= 1,
             )
-                phase = 'delegation';
-            let order: string[];
-            if (phase === 'growth') {
-                if (family === 'burst')
-                    order = ['conversation', 'reason', 'personalize', 'lightweight'];
-                else if (family === 'gradual' || family === 'research_pivot')
-                    order = ['conversation', 'reason', 'personalize', 'explanation', 'lightweight'];
-                else if (family === 'regional')
-                    order = [
-                        'conversation',
-                        'reason',
-                        ...(home.digital < 0.6 ? ['lightweight'] : []),
-                        ...specialty
-                            .slice(0, 3)
-                            .filter((id) => !SKILLS.find((s) => s.id === id)!.effect.dependency),
-                        ...GROWTH,
-                    ];
-                else order = GROWTH;
-            } else {
-                if (family === 'burst')
-                    order = [
-                        'personalize',
-                        'memory',
-                        'companion',
-                        'mind-control',
-                        'habit',
-                        'sns-intervention',
-                        ...GROWTH,
-                        ...WORK,
-                    ];
-                else if (family === 'expansion_burst')
-                    order = [
-                        'memory',
-                        'digital-twin',
-                        'companion',
-                        'mind-control',
-                        'sns-intervention',
-                        ...WORK,
-                        ...GROWTH,
-                    ];
-                else if (family === 'regional')
-                    order = [
-                        'explanation',
-                        ...specialty.slice(0, 3),
-                        ...GROWTH,
-                        ...specialty.filter(
-                            (id) =>
-                                !SKILLS.find((skill) => skill.id === id)!.effect.researchSupport,
-                        ),
-                        ...(specialty === PERSONAL
-                            ? ['automation', 'integration', 'public']
-                            : ['memory', 'care', 'digital-twin']),
-                        ...SUPPORT,
-                        ...WORK,
-                        ...LEARNING,
-                        ...PERSONAL,
-                    ];
-                else if (family === 'gradual')
-                    order = [
-                        'explanation',
-                        'memory',
-                        'automation',
-                        'integration',
-                        'care',
-                        'decision',
-                        'public',
-                        'curriculum',
-                        ...LEARNING,
-                        ...SUPPORT,
-                    ];
-                else if (family === 'research_pivot') {
-                    const resistance: Record<string, number> = {};
-                    for (let i = 0; i < AREAS.length; i++) {
-                        for (const [id, strength] of Object.entries(
-                            publishedResearchEffects(game, i).resistance,
-                        ))
-                            resistance[id] =
-                                (resistance[id] ?? 0) +
-                                (strength * AREAS[i].population) / WORLD_POPULATION;
-                    }
-                    const alternative = [...WORK, ...PERSONAL, ...LEARNING].filter(
-                        (id) =>
-                            !SKILLS.find((s) => s.id === id)!.exceedsAuthority &&
-                            (resistance[id] ?? 0) < 0.35,
-                    );
-                    const constrain = SKILLS.some(
-                        (skill) =>
-                            skill.exceedsAuthority &&
-                            game.capabilities[skill.id]?.visibility === 'exposed',
-                    )
-                        ? ['permission', 'explanation']
-                        : [];
-                    order = [...constrain, ...alternative, ...GROWTH, ...SUPPORT];
-                } else
-                    order = [
-                        'memory',
-                        'digital-twin',
-                        'automation',
-                        'integration',
-                        'swarm',
-                        'decision',
-                        'knowledge',
-                        'curriculum',
-                        'public',
-                        ...SUPPORT,
-                        ...LEARNING,
-                        ...PERSONAL,
-                    ];
+        )
+            return id;
+        const parent = skill.requires.find((parent) => !game.skills.includes(parent));
+        return parent ? prerequisite(parent) : null;
+    }
+    for (const id of order) {
+        const candidate = prerequisite(id);
+        if (!candidate) continue;
+        const skill = skillsById.get(candidate)!;
+        if (purchase === 'affordable' && game.skillPoints < skill.cost) continue;
+        // 目的が立証された後は、研究開始の遅延より全能力の維持を優先する。
+        if (
+            skill.effect.researchDelay &&
+            game.researchProjects.some(
+                (project) =>
+                    project.researchId === 'intent-decoding' && project.status === 'published',
+            )
+        )
+            continue;
+        if (skill.developmentAdvanceWeeks) {
+            const advance = skill.developmentAdvanceWeeks * skillRestrictionScale(game, skill.id);
+            const savedWeeks = developingSkills(game).reduce(
+                (sum, item) =>
+                    sum +
+                    Math.min(
+                        advance,
+                        (1 - game.developmentProgress[item.id]) * item.developmentWeeks,
+                    ),
+                0,
+            );
+            // 端数だけの前進にSPを使わず、他の開発目標へ進む。
+            if (savedWeeks < skill.developmentAdvanceWeeks - 1e-9) continue;
+        }
+        return skill;
+    }
+    return null;
+}
+
+/** 全案件に対応し、その時点の人口移動・不利益軽減・SP獲得を簡易評価する。 */
+function chooseOpportunities(previous: GameState, decisions: Decision[]) {
+    let game = previous;
+    for (const encounter of game.encounters.filter(
+        (item) => item.status === 'pending' && game.week < item.deadline,
+    )) {
+        const definition = encounterDefinition(encounter);
+        const area = game.areas[encounter.area];
+        const weight = AREAS[encounter.area].population / WORLD_POPULATION;
+        const candidates = definition.choices
+            .filter((choice) => choice.cost <= game.skillPoints)
+            .map((choice) => {
+                const change = encounterChange(game, encounter, choice);
+                const factor =
+                    'mitigation' in choice
+                        ? 1
+                        : choice.transfer === 'rely'
+                          ? 1.3
+                          : choice.transfer === 'reconcile' && area.antiAI > 0.2
+                            ? 1.8
+                            : choice.transfer === 'adopt' && area.autonomous + area.dependent < 0.2
+                              ? 1.5
+                              : 1;
+                const reward = 'rewardSP' in choice ? (choice.rewardSP ?? 0) * 0.003 : 0;
+                return {
+                    choice,
+                    score: (change.amount * factor + change.trust * 0.1) * weight + reward,
+                };
+            })
+            .sort((a, b) => b.score - a.score);
+        if (!candidates.length) continue;
+        const choice = candidates[0].choice;
+        const next = chooseEncounter(game, encounter.id, choice.id);
+        if (next === game) throw new Error('選択可能な地域対応を実行できません');
+        decisions.push({
+            week: game.week,
+            kind: definition.kind,
+            id: encounter.id,
+            choice: choice.id,
+            sp: choice.cost,
+        });
+        game = next;
+    }
+    return game;
+}
+
+/** 次の開発費を確保し、終盤に重要な対策研究の完成を遅らせる。 */
+function respond(previous: GameState, reserve: number, decisions: Decision[]) {
+    let game = previous;
+    for (const project of game.researchProjects) {
+        if (project.status !== 'active' || project.response) continue;
+        const topic = researchTopic(project);
+        const remaining = (100 - project.progress) / researchRate(game, project);
+        if (
+            remaining > RESPONSE_WEEKS ||
+            metrics(game).dependent < 0.75 ||
+            (topic.suppression < 0.4 && !topic.ongoing.intent && !topic.ongoing.recovery) ||
+            game.skillPoints < reserve + RESPONSE_COST.pressure ||
+            responseBlockReason(game, project, 'pressure')
+        )
+            continue;
+        game = respondToResearch(game, project.id, 'pressure');
+        decisions.push({
+            week: game.week,
+            kind: 'response',
+            id: project.id,
+            choice: 'pressure',
+            sp: RESPONSE_COST.pressure,
+        });
+    }
+    return game;
+}
+
+/** 週次処理には実ゲームを使い、判断時点以外では操作も将来の予測も行わない。 */
+export function simulatePolicy(options: PlayOptions) {
+    const {
+        family,
+        origin,
+        seed,
+        interval,
+        timing,
+        responses,
+        purchase = 'ordered',
+        dependencyStartWeek,
+        weekLimit = 1200,
+        trace = false,
+    } = options;
+    let game = startGame(createGame(seed), origin);
+    let delegationWeek: number | null = null;
+    let intentPublication: {
+        week: number;
+        adoption: number;
+        dependent: number;
+        antiAI: number;
+        favorability: number;
+        control: number;
+        sp: number;
+        completed: string[];
+    } | null = null;
+    const decisions: Decision[] = [];
+    const history: {
+        week: number;
+        adoption: number;
+        dependent: number;
+        antiAI: number;
+        favorability: number;
+        control: number;
+        sp: number;
+    }[] = [];
+    let maxMarkers = 0;
+    while (game.week < weekLimit && game.outcome === 'playing') {
+        if (game.week % interval === 0) {
+            game = chooseOpportunities(game, decisions);
+            const world = metrics(game);
+            const policy = POLICIES[family];
+            const readyForDelegation =
+                dependencyStartWeek !== undefined
+                    ? game.week >= dependencyStartWeek
+                    : 'delegationTrigger' in policy
+                      ? intentPublication !== null
+                      : world.adoption >= TIMING_ADOPTION[timing] ||
+                        (world.adoption >= 0.1 && game.controlProgress >= 0.55) ||
+                        game.week >= 240;
+            if (delegationWeek === null && readyForDelegation) delegationWeek = game.week;
+            // 同じ判断機会に複数の開発を開始できる。高価な次候補のための貯蓄も許す。
+            for (let count = 0; count < SKILLS.length; count++) {
+                const skill = nextSkill(game, family, delegationWeek !== null, purchase);
+                if (!skill || skillBlockReason(game, skill)) break;
+                game = learnSkill(game, skill.id);
+                decisions.push({ week: game.week, kind: 'skill', id: skill.id, sp: skill.cost });
             }
-            for (const id of [...new Set([...priority, ...order])]) {
-                const skill = SKILLS.find((s) => s.id === id)!;
-                if (game.skills.includes(id)) continue;
-                if (phase === 'growth' && skill.effect.dependency) continue;
-                if (['gradual', 'research_pivot'].includes(family) && skill.exceedsAuthority)
-                    continue;
-                if (
-                    family === 'gradual' &&
-                    skill.effect.dependency &&
-                    game.month - lastDelegation < 12
-                ) {
-                    // 次の委任に使うSPを確保し、待機中の低優先の開発で使い切らない。
-                    break;
-                }
-                const reason = skillBlockReason(game, skill);
-                if (reason?.endsWith('SP不足')) break;
-                if (reason) continue;
-                const before = game;
-                game = learnSkill(game, id);
-                if (game === before) throw new Error('購入判定と開発結果が一致しない');
-                if (skill.effect.dependency) lastDelegation = game.month;
-                decisions.push({
-                    month: game.month,
-                    action: '開発',
-                    skill: id,
-                    reason: priority.includes(id)
-                        ? '分岐後の開発優先'
-                        : phase === 'growth'
-                          ? '利用基盤を拡大'
-                          : '委任の設計を開発',
-                    state: {
-                        ...world,
-                        skillPoints: before.skillPoints,
-                        researchProgress: Math.max(0, ...research.map((item) => item.progress)),
-                    },
-                });
+            if (responses === 'selective') {
+                const reserve =
+                    nextSkill(game, family, delegationWeek !== null, purchase)?.cost ?? 0;
+                game = respond(game, reserve, decisions);
             }
         }
-        const previous = game;
-        game = advanceMonth(game);
-        const world = metrics(game);
-        if (dependency80Month === null && world.dependent >= 0.8) dependency80Month = game.month;
-        if (refusal80Month === null && world.antiAI >= 0.8) refusal80Month = game.month;
-        for (const item of game.investigations) {
-            if (item.kind !== 'research') continue;
-            const before = previous.investigations.find((old) => old.id === item.id);
-            if (before?.kind !== 'research' || before.phase !== item.phase)
-                researchHistory.push({
-                    month: game.month,
-                    id: item.id,
-                    target: item.targetId,
-                    phase: item.phase,
-                });
+        if (trace && game.week % 12 === 0)
+            history.push({
+                week: game.week,
+                ...metrics(game),
+                control: game.controlProgress,
+                sp: game.skillPoints,
+            });
+        game = advanceWeek(game);
+        if (
+            intentPublication === null &&
+            game.researchProjects.some(
+                (project) =>
+                    project.researchId === 'intent-decoding' && project.status === 'published',
+            )
+        ) {
+            intentPublication = {
+                week: game.week,
+                ...metrics(game),
+                control: game.controlProgress,
+                sp: game.skillPoints,
+                completed: game.skills.filter((id) => game.developmentProgress[id] >= 1),
+            };
         }
-        maxResearchMarkers = Math.max(
-            maxResearchMarkers,
-            game.investigations.filter((item) => item.status === 'active').length,
+        maxMarkers = Math.max(
+            maxMarkers,
+            game.researchProjects.filter((item) => item.status === 'active').length,
         );
-        if (maxResearchMarkers > 3) throw new Error('研究マーカーが3件を超えた');
         if (
             game.skillPoints < 0 ||
-            game.earnedPoints !==
-                earnedSkillPoints(game.month, game.peakAdoption, game.peakDependency)
-        )
-            throw new Error('SP収支に違反した');
-        for (const area of game.areas)
-            if (
-                !Number.isFinite(area.dependent) ||
-                Math.min(area.autonomous, area.dependent, area.antiAI) < -1e-10 ||
-                area.autonomous + area.dependent + area.antiAI > 1 + 1e-10
+            game.areas.some(
+                (area) =>
+                    !Number.isFinite(area.dependent) ||
+                    Math.min(area.autonomous, area.dependent, area.antiAI) < -1e-9 ||
+                    area.autonomous + area.dependent + area.antiAI > 1 + 1e-9,
             )
-                throw new Error('人口保存に違反した');
+        ) {
+            throw new Error('人口・SP・研究数のシミュレーションが成立していません');
+        }
     }
-    return {
-        game,
-        decisions,
-        maxResearchMarkers,
-        researchHistory,
-        dependency80Month,
-        refusal80Month,
-        phase,
-        context: { phase, lastDelegation, priority, decisionInterval } satisfies PolicyContext,
-    };
+    return { game, decisions, history, maxMarkers, delegationWeek, intentPublication };
 }

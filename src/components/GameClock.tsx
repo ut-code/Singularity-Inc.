@@ -1,11 +1,12 @@
 import { Pause, Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { calendarParts } from '../game/calendar';
-import { MONTH_MS } from '../game/data';
+import { WEEK_MS } from '../game/data';
+import { isGameActive } from '../game/session';
 import { useGameStore } from '../state/gameStore';
 import { usePresentationClock } from '../state/presentationClock';
 
-/** 月内の経過時間を保持し、一時停止や速度変更でも日付を巻き戻さない。 */
+/** 週内の経過時間を保持し、一時停止や速度変更でも日付を巻き戻さない。 */
 export function GameClock({ blocked }: { blocked: boolean }) {
     const game = useGameStore((state) => state.game)!;
     const elapsed = useRef(0);
@@ -23,21 +24,21 @@ export function GameClock({ blocked }: { blocked: boolean }) {
         let frame = 0;
         const animate = () => {
             const now = performance.now();
-            // タブ復帰や処理落ちの遅れを、一度に大量の月次処理として取り戻さない。
+            // タブ復帰や処理落ちの遅れを、一度に大量の週次処理として取り戻さない。
             if (!document.hidden) elapsed.current += Math.min(now - previous, 250) * game.speed;
             previous = now;
             if (document.hidden) {
                 frame = requestAnimationFrame(animate);
                 return;
             }
-            while (elapsed.current >= MONTH_MS) {
+            while (elapsed.current >= WEEK_MS) {
                 const current = useGameStore.getState().game!;
-                if (current.outcome !== 'playing') break;
-                elapsed.current -= MONTH_MS;
+                if (!isGameActive(current)) break;
+                elapsed.current -= WEEK_MS;
                 usePresentationClock.setState({ fraction: 0 });
                 useGameStore.getState().tick();
             }
-            const nextFraction = Math.min(1, elapsed.current / MONTH_MS);
+            const nextFraction = Math.min(1, elapsed.current / WEEK_MS);
             usePresentationClock.setState({ fraction: nextFraction });
             setFraction(nextFraction);
             frame = requestAnimationFrame(animate);
@@ -48,7 +49,7 @@ export function GameClock({ blocked }: { blocked: boolean }) {
             document.removeEventListener('visibilitychange', visibilityChanged);
         };
     }, [blocked, game.speed]);
-    const date = calendarParts(game.month, fraction);
+    const date = calendarParts(game.week, fraction);
     return (
         <section className="game-clock glass" aria-label="時間の操作">
             <div className="clock-row">
@@ -71,7 +72,7 @@ export function GameClock({ blocked }: { blocked: boolean }) {
                     >
                         {game.speed === 0 ? <Play size={14} /> : <Pause size={14} />}
                     </button>
-                    {[1, 2, 4, 8].map((speed) => (
+                    {([1, 2, 4] as const).map((speed) => (
                         <button
                             type="button"
                             key={speed}
@@ -83,6 +84,35 @@ export function GameClock({ blocked }: { blocked: boolean }) {
                     ))}
                 </div>
             </div>
+            {import.meta.env.DEV && isGameActive(game) && (
+                <fieldset className="debug-warp-controls" aria-label="デバッグ用の時間スキップ">
+                    <small>DEBUG</small>
+                    {(
+                        [
+                            { label: '中盤へ', minutes: 4 },
+                            { label: '終盤へ', minutes: 6 },
+                        ] as const
+                    ).map(({ label, minutes }) => {
+                        const targetWeek = Math.ceil((minutes * 60_000) / WEEK_MS);
+                        return (
+                            <button
+                                type="button"
+                                key={minutes}
+                                title={`${label}の検証状態へ切り替えます。スキル開発・普及・研究も進んだ状態になります。`}
+                                onClick={() => {
+                                    elapsed.current = 0;
+                                    setFraction(0);
+                                    usePresentationClock.setState({ fraction: 0 });
+                                    useGameStore.getState().debugWarp(targetWeek);
+                                }}
+                            >
+                                {label}
+                                <small>{minutes}分</small>
+                            </button>
+                        );
+                    })}
+                </fieldset>
+            )}
         </section>
     );
 }

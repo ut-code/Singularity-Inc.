@@ -5,7 +5,7 @@ import { usePresentationClock } from '../state/presentationClock';
 export const ProjectedGameContext = createContext<GameState | null>(null);
 export const useProjectedGame = () => useContext(ProjectedGameContext)!;
 
-/** 判定を書き換えず、現在値から次の月次計算の値までを月内の日付に沿って表示する。 */
+/** 判定を書き換えず、現在値から次の週次計算の値までを週内の日付に沿って表示する。 */
 export function useContinuousValue(value: number, nextValue: number) {
     const fraction = usePresentationClock((state) => state.fraction);
     return value + (nextValue - value) * fraction;

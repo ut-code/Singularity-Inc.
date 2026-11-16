@@ -1,8 +1,9 @@
 import type { SkillPositions } from './skillLayout.ts';
 
-/** 現在のノードだけを保存する。削除済みノードを含む古い編集画面とも互換性を保つ。 */
+/** 開発ツールから渡された全ノードの座標を検証する。 */
 export function parseSkillPositions(value: unknown, ids: readonly string[]): SkillPositions | null {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    if (Object.keys(value).length !== ids.length) return null;
     const entries: [string, { x: number; y: number }][] = [];
     for (const id of ids) {
         if (!Object.hasOwn(value, id)) return null;

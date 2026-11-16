@@ -6,15 +6,13 @@ export type SkillIcon =
     | 'Building2'
     | 'CheckCheck'
     | 'CircleCheck'
-    | 'ClipboardCheck'
     | 'Compass'
     | 'Cpu'
     | 'Database'
+    | 'EyeOff'
     | 'FlaskConical'
-    | 'GraduationCap'
     | 'HeartHandshake'
     | 'Lightbulb'
-    | 'Link'
     | 'MessageCircle'
     | 'Network'
     | 'ScanSearch'
@@ -22,18 +20,13 @@ export type SkillIcon =
     | 'Server'
     | 'Settings'
     | 'ShieldCheck'
-    | 'ShieldHalf'
-    | 'Smartphone'
-    | 'Wifi'
     | 'Workflow';
 
 export interface SkillContent extends Skill {
     icon: SkillIcon;
-    referenceGain: number;
 }
 
 export interface SkillBranchContent {
     icon: SkillIcon;
     label: string;
-    initialValue: number;
 }

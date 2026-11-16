@@ -1,9 +1,9 @@
 import { Check, LockKeyhole, Sparkles } from 'lucide-react';
-import { useLayoutEffect, useRef } from 'react';
-import { capabilityLabel } from '../../game/secrecy/capabilities';
+import { useRef } from 'react';
 import { skillEffectiveness } from '../../game/skillEffectiveness';
 import type { TreePoint } from '../../game/skillLayout';
-import { skillBlockReason, skillCost, skillReachable } from '../../game/skills';
+import { skillStatusLabel } from '../../game/skillRuntime';
+import { skillBlockReason, skillReachable } from '../../game/skills';
 import type { GameState } from '../../game/types';
 import { SKILL_PRESENTATION } from './skillPresentation';
 import { useSkillLayoutEditor } from './useSkillLayoutEditor';
@@ -21,53 +21,23 @@ export function SkillTreeMap({
     const editor = useSkillLayoutEditor();
     const tree = editor.tree;
     const effectiveness = skillEffectiveness(game);
-    const { viewport, size, zoom, canvasWidth, canvasHeight, renderedWidth, renderedHeight } =
-        useSkillTreeViewport(tree.width, tree.height);
-    const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+    const left = Math.min(...tree.positions.map((p) => p.x)) - tree.nodeWidth / 2 - 40;
+    const top = Math.min(...tree.positions.map((p) => p.y)) - tree.nodeHeight / 2 - 40;
+    const width = Math.max(...tree.positions.map((p) => p.x)) + tree.nodeWidth / 2 + 40 - left;
+    const height = Math.max(...tree.positions.map((p) => p.y)) + tree.nodeHeight / 2 + 60 - top;
+    const { viewport, zoom, canvasWidth, canvasHeight, renderedWidth, renderedHeight } =
+        useSkillTreeViewport(width, height);
     const nodeDrag = useRef<{ id: string; x: number; y: number; point: TreePoint } | null>(null);
-    useLayoutEffect(() => {
-        if (size.width <= 1 || size.height <= 1 || editor.editing) return;
-        viewport
-            .current!.querySelector(`[data-skill-id="${selectedId}"]`)
-            ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    }, [selectedId, size.width, size.height, editor.editing, viewport]);
     return (
         <div className="tree-map">
             <section
                 ref={viewport}
                 className="tree-viewport"
-                aria-label="スキルツリー。ドラッグで移動、ホイールと2本指のピンチで拡大縮小。"
+                aria-label="スキルツリー"
                 data-layout-editing={editor.editing}
-                onPointerDown={(event) => {
-                    if (
-                        (event.target as Element).closest('button') ||
-                        event.pointerType === 'touch'
-                    )
-                        return;
-                    drag.current = {
-                        x: event.clientX,
-                        y: event.clientY,
-                        left: event.currentTarget.scrollLeft,
-                        top: event.currentTarget.scrollTop,
-                    };
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                }}
-                onPointerMove={(event) => {
-                    if (!drag.current) return;
-                    event.currentTarget.scrollTo(
-                        drag.current.left + drag.current.x - event.clientX,
-                        drag.current.top + drag.current.y - event.clientY,
-                    );
-                }}
-                onPointerUp={() => {
-                    drag.current = null;
-                }}
-                onPointerCancel={() => {
-                    drag.current = null;
-                }}
             >
                 <svg
-                    viewBox={`${-canvasWidth / 2} ${-canvasHeight / 2} ${canvasWidth} ${canvasHeight}`}
+                    viewBox={`${left} ${top} ${canvasWidth} ${canvasHeight}`}
                     className="skill-tree"
                     style={{ width: renderedWidth, height: renderedHeight }}
                     aria-label="AI機能の開発と接続を示すスキルツリー"
@@ -76,6 +46,8 @@ export function SkillTreeMap({
                     {tree.edges.map((edge) => (
                         <line
                             key={`${edge.from}:${edge.to}`}
+                            data-from={edge.from}
+                            data-to={edge.to}
                             className={`tree-branch ${game.skills.includes(edge.to) ? 'complete' : ''}`}
                             x1={edge.points[0].x}
                             y1={edge.points[0].y}
@@ -101,9 +73,7 @@ export function SkillTreeMap({
                         const owned = game.skills.includes(skill.id);
                         const locked = !skillReachable(game, skill);
                         const affordable = !skillBlockReason(game, skill);
-                        const reduction = owned
-                            ? 100 - Math.round(effectiveness[skill.id].effective * 100)
-                            : 0;
+                        const reduction = 100 - Math.round(effectiveness[skill.id].effective * 100);
                         return (
                             <foreignObject
                                 key={skill.id}
@@ -120,7 +90,7 @@ export function SkillTreeMap({
                                     aria-label={`${skill.name}・${owned ? '習得済み' : locked ? 'ロック中' : affordable ? '習得可能' : 'SP不足'}`}
                                     title={
                                         reduction > 0
-                                            ? `${skill.name}の${skill.effect.dependency ? '依存効果' : '介入・運用'}を${reduction}%抑制中。選択すると内訳を確認できます。`
+                                            ? `${skill.name}の効果を${reduction}%抑制中。選択すると内訳を確認できます。`
                                             : skill.name
                                     }
                                     onClick={() => onSelect(skill.id)}
@@ -165,17 +135,17 @@ export function SkillTreeMap({
                                         <small>
                                             {owned ? <Check size={10} aria-hidden="true" /> : null}
                                             {owned
-                                                ? capabilityLabel(game, skill.id)
-                                                : `${skillCost(game, skill)} SP`}
-                                            {reduction > 0 && (
-                                                <b className="tree-suppression">−{reduction}%</b>
-                                            )}
+                                                ? skillStatusLabel(game, skill.id)
+                                                : `${skill.cost} SP`}
                                         </small>
                                     </span>
                                     {locked && !owned && (
                                         <span className="tree-node-lock-overlay" aria-hidden="true">
                                             <LockKeyhole size={24} />
                                         </span>
+                                    )}
+                                    {reduction > 0 && (
+                                        <b className="tree-suppression">−{reduction}%</b>
                                     )}
                                 </button>
                             </foreignObject>

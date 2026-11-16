@@ -1,0 +1,85 @@
+.coachmark {
+    position: fixed;
+    z-index: 18;
+    width: max-content;
+    max-width: min(300px, calc(100vw - 32px));
+    padding: 8px 32px 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    color: var(--text-secondary);
+    background: var(--surface-page);
+    pointer-events: none;
+}
+.coachmark p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+}
+.coachmark-close {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    color: var(--muted);
+    background: transparent;
+    pointer-events: auto;
+}
+.coachmark-tail {
+    position: absolute;
+    overflow: visible;
+    fill: var(--surface-page);
+}
+.coachmark-tail-edge {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-linejoin: round;
+}
+.agent-name-input {
+    display: grid;
+    gap: 7px;
+    margin: 12px 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+.agent-name-input input {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    background: var(--surface-control);
+    color: var(--text);
+    font: inherit;
+}
+.map-encounter-marker[data-critical="true"] .map-encounter-icon,
+.control-hud[data-alert="true"] .countermeasure-trigger {
+    border-color: var(--alert-color);
+    animation: alert-border-pulse 2.4s ease-in-out infinite;
+}
+@keyframes alert-border-pulse {
+    0%,
+    100% {
+        border-color: var(--alert-color);
+    }
+    50% {
+        border-color: color-mix(in srgb, var(--alert-color) 55%, black);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .map-encounter-marker[data-critical="true"] .map-encounter-icon,
+    .control-hud[data-alert="true"] .countermeasure-trigger {
+        animation: none;
+    }
+}
+.map-encounter-marker.chat .map-research-progress {
+    --progress-color: #a6b8c5;
+}
+.map-encounter-marker.event .map-research-progress {
+    --progress-color: var(--warning);
+}
