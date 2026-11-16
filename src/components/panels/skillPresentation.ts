@@ -56,6 +56,10 @@ export const SKILL_BRANCHES = Object.fromEntries(
     ]),
 ) as Record<Branch, { icon: LucideIcon; label: string }>;
 
-export const SKILL_PRESENTATION: Record<string, { icon: LucideIcon }> = Object.fromEntries(
-    SKILL_CONTENT.map((skill) => [skill.id, { icon: icons[skill.icon] }]),
-);
+export const SKILL_PRESENTATION: Record<string, { icon: LucideIcon; color: string }> =
+    Object.fromEntries(
+        SKILL_CONTENT.map((skill) => [
+            skill.id,
+            { icon: icons[skill.icon], color: `var(--branch-${skill.branch.toLowerCase()})` },
+        ]),
+    );

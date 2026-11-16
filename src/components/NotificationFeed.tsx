@@ -1,6 +1,6 @@
 import { useGameStore } from '../state/gameStore';
 import styles from './NotificationFeed.module.css';
-import { SkillText } from './SkillText';
+import { SKILL_PRESENTATION } from './panels/skillPresentation';
 import { researchPresentation } from './society/researchPresentation';
 
 export function NotificationFeed({ speed }: { speed: number }) {
@@ -15,7 +15,10 @@ export function NotificationFeed({ speed }: { speed: number }) {
                         (project) => project.id === item.researchProjectId,
                     );
                     const presentation = project ? researchPresentation(project) : null;
-                    const Icon = presentation?.Icon;
+                    const skillPresentation = item.skillId
+                        ? SKILL_PRESENTATION[item.skillId]
+                        : null;
+                    const Icon = skillPresentation?.icon ?? presentation?.Icon;
                     return (
                         <li
                             key={item.id}
@@ -28,13 +31,13 @@ export function NotificationFeed({ speed }: { speed: number }) {
                             {Icon && (
                                 <Icon
                                     size={15}
-                                    style={{ color: presentation!.color }}
+                                    style={{
+                                        color: skillPresentation?.color ?? presentation?.color,
+                                    }}
                                     aria-hidden="true"
                                 />
                             )}
-                            <span title={item.text}>
-                                <SkillText>{item.text}</SkillText>
-                            </span>
+                            <span title={item.text}>{item.text}</span>
                         </li>
                     );
                 })}

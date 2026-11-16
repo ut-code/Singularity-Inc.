@@ -1,6 +1,7 @@
 import { ENCOUNTERS } from '../../content/encounters.ts';
 import { PERSONAL_LINKS } from '../connections.ts';
 import { AREAS, WEEK_MS } from '../data.ts';
+import { recordInstantPopulationChanges } from '../instantPopulationChanges.ts';
 import { canPlaceMapIncident } from '../mapIncidents.ts';
 import { clamp, metrics } from '../metrics.ts';
 import { seededValue } from '../random.ts';
@@ -65,7 +66,7 @@ export function chooseEncounter(game: GameState, id: string, choiceId: string): 
             ),
         };
     const change = encounterChange(game, encounter, choice);
-    return {
+    const result: GameState = {
         ...game,
         skillPoints: game.skillPoints - choice.cost + (choice.rewardSP ?? 0),
         news: [
@@ -102,6 +103,11 @@ export function chooseEncounter(game: GameState, id: string, choiceId: string): 
                   }
                 : item,
         ),
+    };
+    return {
+        ...result,
+        instantPopulationChanges: recordInstantPopulationChanges(game, result.areas)
+            .instantPopulationChanges,
     };
 }
 
@@ -158,7 +164,7 @@ export function advanceEncounters(game: GameState): GameState {
             },
         ];
     }
-    game = { ...game, areas, news };
+    game = { ...recordInstantPopulationChanges(game, areas), news };
     const encounters = game.encounters.map((item) =>
         (item.status === 'pending' || item.status === 'responded') && game.week >= item.deadline
             ? {

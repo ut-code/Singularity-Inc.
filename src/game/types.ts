@@ -40,6 +40,8 @@ export interface AreaState {
     favorability: number;
 }
 export interface GameState {
+    /** 研究・法案・イベント・チャットによる即時人口移動の累積値（地図演出用）。 */
+    instantPopulationChanges?: Pick<AreaState, 'autonomous' | 'dependent' | 'antiAI'>[];
     seed: number;
     name: string;
     week: number;

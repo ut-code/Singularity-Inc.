@@ -1,7 +1,7 @@
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import type { AreaState } from '../game/types';
+import type { AreaState, GameState } from '../game/types';
 import {
     constrainCamera,
     fitScale,
@@ -63,6 +63,7 @@ export const WorldMap = memo(function WorldMap({
     areaIndexUrl,
     invasionUrl,
     areaStates,
+    populationChanges,
     humanProtection,
     serverArea,
     onAreaSelect,
@@ -83,6 +84,7 @@ export const WorldMap = memo(function WorldMap({
     areaIndexUrl: string;
     invasionUrl: string;
     areaStates: AreaState[];
+    populationChanges?: GameState['instantPopulationChanges'];
     humanProtection: number[];
     serverArea: number;
     onAreaSelect?: (id: number | null) => void;
@@ -477,6 +479,7 @@ export const WorldMap = memo(function WorldMap({
                 />
             )}
             <MapMetricChanges
+                populationChanges={populationChanges}
                 speed={trafficSpeed}
                 areaStates={areaStates}
                 regions={regions}

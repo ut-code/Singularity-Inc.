@@ -4,6 +4,7 @@ import {
     type ResearchEffects,
     type ResearchTopic,
 } from '../../content/research.ts';
+import { recordInstantPopulationChanges } from '../instantPopulationChanges.ts';
 import { canPlaceMapIncident } from '../mapIncidents.ts';
 import { clamp } from '../metrics.ts';
 import { seededValue } from '../random.ts';
@@ -148,7 +149,7 @@ function publish(game: GameState, project: ResearchProject): GameState {
             )
                 exposedSkills.add(id);
     return {
-        ...published,
+        ...recordInstantPopulationChanges(published, areas),
         skillPoints: game.skillPoints + insight,
         areas,
         exposedSkills: [...exposedSkills],

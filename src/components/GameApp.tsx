@@ -173,6 +173,7 @@ export function GameApp({
                             {...mapScene}
                             selectedArea={selected}
                             areaStates={game.areas}
+                            populationChanges={game.instantPopulationChanges}
                             humanProtection={protection}
                             serverArea={game.origin}
                             encounters={encounters}
