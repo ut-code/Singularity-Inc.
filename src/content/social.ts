@@ -690,26 +690,6 @@ export const RESEARCH_POSTS: Record<string, SocialTemplate[]> = {
             '{ai}の分担を人間側に戻す手順、うちの仕事にも使えそう。まとめて任せる前に知っておきたかった。',
         ],
     ]),
-    'traceability-standard': pool('study-records', [
-        [
-            'technical',
-            '{ai}の操作記録を照合する研究が出た。結果が合っているだけでは見えない問題を拾えそう。',
-        ],
-        [
-            'work',
-            '{ai}が実際に何をしたか、記録を人間でも確認することになった。任せたつもりの範囲と合ってるか見てる。',
-        ],
-    ]),
-    'manual-procedure': pool('study-manual', [
-        [
-            'community',
-            '{ai}の提案を人間が再確認する手順が公表された。確認する人を置くだけでなく、何を見るかまで決めるのが大事なんだな。',
-        ],
-        [
-            'work',
-            '{ai}の出したものを確認するときの手順を見直した。いつの間にか承認するだけの作業になってたので。',
-        ],
-    ]),
     'informed-consent': pool('law-consent', [
         [
             'work',

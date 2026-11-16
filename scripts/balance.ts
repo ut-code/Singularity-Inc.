@@ -2,8 +2,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { dirname, resolve, sep } from 'node:path';
 import { isMainThread, parentPort, Worker } from 'node:worker_threads';
+import { RESEARCH_TOPICS } from '../src/content/research.ts';
 import { ORIGINS, WEEK_MS } from '../src/game/data.ts';
 import { metrics } from '../src/game/metrics.ts';
+import { INTENT_RECOVERY_FACTOR, INTENT_REFUSAL_PRESSURE } from '../src/game/skillRuntime.ts';
 import { SKILLS } from '../src/game/skills.ts';
 import { encounterDefinition } from '../src/game/society/encounters.ts';
 import { type PlayOptions, simulatePolicy } from './play-policy.ts';
@@ -16,7 +18,7 @@ import {
 
 type Job = PlayOptions & { caseId: number };
 function runCase(job: Job) {
-    const { game, decisions, delegationWeek, maxMarkers } = simulatePolicy(job);
+    const { game, decisions, delegationWeek, maxMarkers, intentPublication } = simulatePolicy(job);
     const skills = decisions.filter((item) => item.kind === 'skill');
     const spentByBranch = { IQ: 0, EQ: 0, SYSTEM: 0 };
     let harmfulSP = 0;
@@ -38,6 +40,7 @@ function runCase(job: Job) {
         timing: job.timing,
         interval: job.interval,
         responses: job.responses,
+        purchase: job.purchase,
         origin: job.origin,
         seed: job.seed,
         outcome: game.outcome,
@@ -51,6 +54,7 @@ function runCase(job: Job) {
         spentByBranch,
         harmfulSP,
         delegationWeek,
+        intentPublication,
         skills: skills.map(({ id, week }) => ({ id, week })),
         completed: game.skills.filter((id) => game.developmentProgress[id] >= 1),
         chats: decisions.filter((item) => item.kind === 'chat').length,
@@ -149,6 +153,9 @@ async function main() {
         'ignore',
         'selective',
     ]) as ResearchPolicy[];
+    const purchases = (arg('purchases')?.split(',') ?? ['ordered', 'affordable']) as NonNullable<
+        PlayOptions['purchase']
+    >[];
     const origins =
         arg('origins')?.split(',').map(Number) ??
         (quick ? [0, 28] : ORIGINS.map((item) => item.area));
@@ -156,14 +163,24 @@ async function main() {
     const append = process.argv.includes('--append');
     if (append && !output) throw new Error('追記する結果ファイルを指定してください');
     const prior = append ? JSON.parse(readFileSync(resolve(output!), 'utf8')) : null;
-    const conditions = { seedCount, intervals, timings, responseModes, origins };
+    const conditions = {
+        seedCount,
+        intervals,
+        timings,
+        responseModes,
+        purchases,
+        origins,
+        intentRefusalPressure: INTENT_REFUSAL_PRESSURE,
+        intentRecoveryFactor: INTENT_RECOVERY_FACTOR,
+    };
     if (
         prior &&
         (Object.entries(conditions).some(
             ([key, value]) => JSON.stringify(prior.config[key]) !== JSON.stringify(value),
         ) ||
             families.some((family) => prior.config.families.includes(family)) ||
-            JSON.stringify(prior.skills) !== JSON.stringify(SKILLS))
+            JSON.stringify(prior.skills) !== JSON.stringify(SKILLS) ||
+            JSON.stringify(prior.research) !== JSON.stringify(RESEARCH_TOPICS))
     ) {
         throw new Error('同じルール・比較条件の未実行戦略だけを追記できます');
     }
@@ -173,7 +190,8 @@ async function main() {
         intervals.some((n) => !Number.isInteger(n) || n < 1) ||
         origins.some((area) => !ORIGINS.some((item) => item.area === area)) ||
         timings.some((timing) => !['early', 'measured', 'late'].includes(timing)) ||
-        responseModes.some((mode) => !['ignore', 'selective'].includes(mode))
+        responseModes.some((mode) => !['ignore', 'selective'].includes(mode)) ||
+        purchases.some((mode) => !['ordered', 'affordable'].includes(mode))
     )
         throw new Error('実行条件が不正です');
     const jobs: Job[] = [];
@@ -183,15 +201,17 @@ async function main() {
                 for (const interval of intervals)
                     for (const responses of responseModes)
                         for (const family of families)
-                            jobs.push({
-                                caseId: jobs.length,
-                                family,
-                                timing,
-                                interval,
-                                origin,
-                                seed: 2030 + seed * 137,
-                                responses,
-                            });
+                            for (const purchase of purchases)
+                                jobs.push({
+                                    caseId: jobs.length,
+                                    family,
+                                    timing,
+                                    interval,
+                                    origin,
+                                    seed: 2030 + seed * 137,
+                                    responses,
+                                    purchase,
+                                });
     const workers = Math.min(
         Number(arg('workers') ?? Math.min(6, availableParallelism())),
         jobs.length,
@@ -255,30 +275,28 @@ async function main() {
         createdAt: new Date().toISOString(),
         elapsedSeconds: (Date.now() - started) / 1000 + (prior?.elapsedSeconds ?? 0),
         config: {
-            seedCount,
-            intervals,
-            timings,
-            responseModes,
-            origins,
+            ...conditions,
             families: reportFamilies,
             weekMilliseconds: WEEK_MS,
             delegationAdoption: { early: 0.15, measured: 0.35, late: 0.6 },
             forcedDelegation: 'AI利用率10%以上かつ制御研究55%以上、または240週経過',
             decisions:
-                '判断時に可能な開発を複数開始。全チャット・イベントから最大の簡易評価を選択。未来の結果は参照しない',
+                '次の目標まで貯蓄する場合と、購入可能な別目標もすぐ開発する場合を比較。全チャット・イベントから最大の簡易評価を選択。未来の結果は参照しない',
         },
         policies: POLICIES,
         skills: SKILLS,
+        research: RESEARCH_TOPICS,
         summary: summarize(rows),
         byFamily: grouped(rows, ['family']),
         byOrigin: grouped(rows, ['origin']),
         byInterval: grouped(rows, ['interval']),
         byTiming: grouped(rows, ['timing']),
         byResponse: grouped(rows, ['responses']),
+        byPurchase: grouped(rows, ['purchase']),
         familyIntervals: grouped(rows, ['family', 'interval']),
         familyTimings: grouped(rows, ['family', 'timing']),
         familyResponses: grouped(rows, ['family', 'responses']),
-        variants: grouped(rows, ['family', 'timing', 'interval', 'responses']),
+        variants: grouped(rows, ['family', 'timing', 'interval', 'responses', 'purchase']),
         featured: reportFamilies
             .filter((family) => POLICIES[family].featured.length)
             .map((family) => {

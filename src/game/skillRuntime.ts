@@ -42,7 +42,8 @@ function hasRegionalRestrictions(game: GameState) {
     }
     return regional;
 }
-export const INTENT_REFUSAL_PRESSURE = 0.1;
+export const INTENT_REFUSAL_PRESSURE = 0.05;
+export const INTENT_RECOVERY_FACTOR = 0.08;
 export const SNS_REFUSAL_REDUCTION = 0.7;
 export const SNS_RECONCILIATION = 0.016;
 

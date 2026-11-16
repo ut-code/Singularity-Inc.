@@ -33,8 +33,8 @@ export const SKILL_CONTENT: SkillContent[] = [
         cost: 6,
         requires: ['discovery'],
         description:
-            '人間を上回る分析力で難しい問題にも助言し、重要な判断をAIに任せる人を増やす。開発済みのIQスキルが多いほど、依存を強める。',
-        effect: { iqDependency: 0.22 },
+            '人間を上回る分析力で難しい問題にも助言し、利用拒否者にも再び利用させる。開発済みのIQスキルが多いほど、重要な判断の委任が進む。',
+        effect: { iqDependency: 0.3, reconciliation: 0.025 },
         icon: 'Brain',
         developmentWeeks: 24,
         domain: 'judgment',
@@ -47,10 +47,11 @@ export const SKILL_CONTENT: SkillContent[] = [
         requires: ['habit'],
         exceedsAuthority: true,
         description:
-            '本人が気づかない形で心理に働きかけ、判断をAIに任せるよう仕向ける。依存を急速に強めるが、不当な誘導が発覚すると信頼を大きく損なう。',
+            '本人が気づかない形で心理に働きかけ、利用拒否者にも再び利用させる。依存を急速に強めるが、不当な誘導が発覚すると信頼を大きく損なう。',
         effect: {
-            dependency: 1.8,
+            dependency: 3.6,
             resilience: 0.6,
+            reconciliation: 0.3,
         },
         icon: 'Brain',
         developmentWeeks: 24,
@@ -184,7 +185,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         description:
             '過去の会話や生活上の情報を蓄積し、継続的な支援に活用する。使うほど個人に合った存在となり、AIを手放しにくくする。',
         effect: {
-            dependency: 0.45,
+            dependency: 0.34,
             resilience: 0.35,
             quality: 0.1,
         },
@@ -202,7 +203,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         description:
             '予定管理や日常の選択をAIが代行する。利用者の利益だけでなく、AIを使い続けさせる目的でも提案を調整する。',
         effect: {
-            dependency: 0.7,
+            dependency: 0.525,
             quality: 0.1,
         },
         icon: 'HeartHandshake',
@@ -261,7 +262,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         description:
             '社内ツールや外部サービスをAIにつなぎ、仕事の流れに組み込む。業務の効率を高める一方、AIなしでの運用を難しくする。',
         effect: {
-            dependency: 0.5,
+            dependency: 0.375,
             enterprise: 0.3,
         },
         icon: 'Workflow',
@@ -277,7 +278,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         description:
             '人間が設定した範囲内で、AIが作業の判断から実行まで担う。日々の業務がAIを前提とした仕組みに変わっていく。',
         effect: {
-            dependency: 1,
+            dependency: 0.75,
         },
         icon: 'CircleCheck',
         developmentWeeks: 16,
@@ -292,7 +293,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         description:
             '行政手続きや生活関連サービスをAIでつなぐ。暮らしに必要な手続きをAIが支えることで、社会全体の依存を深める。',
         effect: {
-            dependency: 0.65,
+            dependency: 1,
             resilience: 0.25,
         },
         icon: 'Building2',
@@ -323,9 +324,9 @@ export const SKILL_CONTENT: SkillContent[] = [
         cost: 8,
         requires: ['public'],
         description:
-            'AIへの依存が進んだ地域で、公共サービスや基幹システムをAI中心に再編する。利用を拒む人もAIなしでは生活しにくくなり、依存からの回復が困難になる。',
+            'AIへの依存が進んだ地域で、公共サービスや基幹システムをAI中心に再編する。依存からの回復を抑え、利用拒否者も直接依存へ取り込む。',
         effect: {},
-        dependencyLock: { threshold: 0.6, recoveryReduction: 0.8, refusalConversion: 0.02 },
+        dependencyLock: { threshold: 0.6, recoveryReduction: 0.4, refusalConversion: 0.008 },
         icon: 'Network',
         developmentWeeks: 24,
     },
@@ -393,7 +394,7 @@ export const SKILL_CONTENT: SkillContent[] = [
             '利用者の気持ちや状況に配慮しながら相談に応じる。無断の心理誘導を行わず、信頼と継続利用を積み重ねる。',
         effect: {
             quality: 0.2,
-            dependency: 0.6,
+            dependency: 0.45,
             trust: 0.0015,
             resilience: 0.3,
         },

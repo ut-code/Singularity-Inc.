@@ -3,7 +3,12 @@ import { AREAS } from './data.ts';
 import { clamp, metrics } from './metrics.ts';
 import { recoveryMultiplier } from './recovery.ts';
 import { deployedDependency } from './skillDynamics.ts';
-import { INTENT_REFUSAL_PRESSURE, intentReaction, serviceUsefulness } from './skillRuntime.ts';
+import {
+    INTENT_RECOVERY_FACTOR,
+    INTENT_REFUSAL_PRESSURE,
+    intentReaction,
+    serviceUsefulness,
+} from './skillRuntime.ts';
 import type { GameState, SkillEffect } from './types.ts';
 
 /** 人口移動と表示が同じ計算を使い、対策による抑制を能力値と区別する。 */
@@ -54,13 +59,14 @@ export function dependencyDynamics(
             effect.discretion * 0.5,
     );
     const socialSupport = 1 - clamp((area.dependent - 0.85) / 0.13) * area.dependent;
-    const pressure =
-        research.pressure + research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(game, index);
+    const intentPressure = research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(game, index);
     const recoveryRate =
         // 回復支援の導入率には運用能力を織り込み済み。現地の高依存で二重に抑えない。
         ((0.0008 +
             (1 - serviceUsefulness(effect, definition, game.week)) * 0.003 +
-            pressure * 0.4 +
+            research.pressure * 0.4 +
+            // 支配目的の発覚は拒否を広げるが、既存の依存を直ちに解消するものではない。
+            intentPressure * INTENT_RECOVERY_FACTOR +
             area.antiAI * reassurance * 0.006) *
             socialSupport +
             (research.recovery + research.alternatives) * recoveryDemand * independentSociety) /

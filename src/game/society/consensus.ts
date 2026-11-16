@@ -23,11 +23,12 @@ export function consensusPressure(
     const finalDependency = ramp(world.dependent, 0.9, 0.98);
     const localResistance = ramp(area.antiAI, 0.1, 0.6) * (1 - ramp(world.dependent, 0.95, 0.99));
     // 90%以降は一定量の人口移動を滑らかに加え、端数だけを待つ時間を短くする。
+    // 支配への同調も90%以降に限り、中盤スキルによる依存化を補いすぎないようにする。
     return {
         dependency:
             ((0.1 + 0.04 * finalDependency) *
                 (delegation / (0.6 + delegation)) *
-                ramp(world.dependent, 0.8, 0.98) *
+                ramp(world.dependent, 0.9, 0.98) *
                 (1 - localResistance)) /
                 (1 + evidence * 40 * (1 - finalDependency)) +
             finishingRate(world.dependent),

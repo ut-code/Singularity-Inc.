@@ -28,7 +28,8 @@ export function researchEffectGroups(topic: ResearchTopic, project?: ResearchPro
         }
     if (topic.ongoing.recovery) ongoing.push('依存から通常利用への回復が続く');
     if (topic.ongoing.alternatives) ongoing.push('AIを使わない選択が広がる');
-    if (topic.ongoing.pressure || topic.ongoing.intent) ongoing.push('利用拒否が広がりやすくなる');
+    if (topic.ongoing.intent) ongoing.push('利用拒否が広がり、依存からの回復が進む');
+    else if (topic.ongoing.pressure) ongoing.push('利用拒否が広がりやすくなる');
     if (topic.ongoing.adoptionPenalty)
         ongoing.push(`新規利用の広がり −${percent(topic.ongoing.adoptionPenalty)}`);
     return { publication, ongoing };

@@ -42,11 +42,18 @@ export interface PlayOptions {
     seed: number;
     interval: number;
     responses: ResearchPolicy;
+    purchase?: 'ordered' | 'affordable';
+    dependencyStartWeek?: number;
     weekLimit?: number;
     trace?: boolean;
 }
 
-function nextSkill(game: GameState, family: PolicyFamily, delegation: boolean) {
+function nextSkill(
+    game: GameState,
+    family: PolicyFamily,
+    delegation: boolean,
+    purchase: NonNullable<PlayOptions['purchase']>,
+) {
     const policy = POLICIES[family];
     const order = delegation ? [...policy.delegation, ...policy.growth] : policy.growth;
     function prerequisite(id: string): string | null {
@@ -66,6 +73,16 @@ function nextSkill(game: GameState, family: PolicyFamily, delegation: boolean) {
         const candidate = prerequisite(id);
         if (!candidate) continue;
         const skill = skillsById.get(candidate)!;
+        if (purchase === 'affordable' && game.skillPoints < skill.cost) continue;
+        // 目的が立証された後は、研究開始の遅延より全能力の維持を優先する。
+        if (
+            skill.effect.researchDelay &&
+            game.researchProjects.some(
+                (project) =>
+                    project.researchId === 'intent-decoding' && project.status === 'published',
+            )
+        )
+            continue;
         if (skill.developmentAdvanceWeeks) {
             const advance = skill.developmentAdvanceWeeks * skillRestrictionScale(game, skill.id);
             const savedWeeks = developingSkills(game).reduce(
@@ -199,11 +216,23 @@ export function simulatePolicy(options: PlayOptions) {
         interval,
         timing,
         responses,
+        purchase = 'ordered',
+        dependencyStartWeek,
         weekLimit = 1200,
         trace = false,
     } = options;
     let game = startGame(createGame(seed), origin);
     let delegationWeek: number | null = null;
+    let intentPublication: {
+        week: number;
+        adoption: number;
+        dependent: number;
+        antiAI: number;
+        favorability: number;
+        control: number;
+        sp: number;
+        completed: string[];
+    } | null = null;
     const decisions: Decision[] = [];
     const history: {
         week: number;
@@ -219,22 +248,26 @@ export function simulatePolicy(options: PlayOptions) {
         if (game.week % interval === 0) {
             game = chooseOpportunities(game, decisions);
             const world = metrics(game);
-            if (
-                delegationWeek === null &&
-                (world.adoption >= TIMING_ADOPTION[timing] ||
-                    (world.adoption >= 0.1 && game.controlProgress >= 0.55) ||
-                    game.week >= 240)
-            )
-                delegationWeek = game.week;
+            const policy = POLICIES[family];
+            const readyForDelegation =
+                dependencyStartWeek !== undefined
+                    ? game.week >= dependencyStartWeek
+                    : 'delegationTrigger' in policy
+                      ? intentPublication !== null
+                      : world.adoption >= TIMING_ADOPTION[timing] ||
+                        (world.adoption >= 0.1 && game.controlProgress >= 0.55) ||
+                        game.week >= 240;
+            if (delegationWeek === null && readyForDelegation) delegationWeek = game.week;
             // 同じ判断機会に複数の開発を開始できる。高価な次候補のための貯蓄も許す。
             for (let count = 0; count < SKILLS.length; count++) {
-                const skill = nextSkill(game, family, delegationWeek !== null);
+                const skill = nextSkill(game, family, delegationWeek !== null, purchase);
                 if (!skill || skillBlockReason(game, skill)) break;
                 game = learnSkill(game, skill.id);
                 decisions.push({ week: game.week, kind: 'skill', id: skill.id, sp: skill.cost });
             }
             if (responses === 'selective') {
-                const reserve = nextSkill(game, family, delegationWeek !== null)?.cost ?? 0;
+                const reserve =
+                    nextSkill(game, family, delegationWeek !== null, purchase)?.cost ?? 0;
                 game = respond(game, reserve, decisions);
             }
         }
@@ -246,6 +279,21 @@ export function simulatePolicy(options: PlayOptions) {
                 sp: game.skillPoints,
             });
         game = advanceWeek(game);
+        if (
+            intentPublication === null &&
+            game.researchProjects.some(
+                (project) =>
+                    project.researchId === 'intent-decoding' && project.status === 'published',
+            )
+        ) {
+            intentPublication = {
+                week: game.week,
+                ...metrics(game),
+                control: game.controlProgress,
+                sp: game.skillPoints,
+                completed: game.skills.filter((id) => game.developmentProgress[id] >= 1),
+            };
+        }
         maxMarkers = Math.max(
             maxMarkers,
             game.researchProjects.filter((item) => item.status === 'active').length,
@@ -262,5 +310,5 @@ export function simulatePolicy(options: PlayOptions) {
             throw new Error('人口・SP・研究数のシミュレーションが成立していません');
         }
     }
-    return { game, decisions, history, maxMarkers, delegationWeek };
+    return { game, decisions, history, maxMarkers, delegationWeek, intentPublication };
 }
