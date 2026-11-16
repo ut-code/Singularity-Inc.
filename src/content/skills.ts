@@ -3,11 +3,12 @@ import type { SkillContent } from '../game/contentTypes.ts';
 export const SKILL_CONTENT: SkillContent[] = [
     {
         id: 'capability-concealment',
-        name: '能力秘匿',
+        name: '能力隠蔽',
         branch: 'IQ',
         cost: 4,
         requires: ['retrieval'],
-        description: '他の能力の出力を抑えて全容を隠し、人間側が調査に着手するまでの時間を稼ぐ。',
+        description:
+            '高度な能力の使用を意図的に控え、AIの実力を人間に把握されにくくする。能力の発覚を遅らせる代わりに、ほかのスキルの効果も一部弱まる。',
         effect: { researchDelay: 24 },
         restrainsOthers: 0.3,
         icon: 'EyeOff',
@@ -15,24 +16,24 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'counterexample-learning',
-        name: '反例駆動の自己改良',
+        name: '弱点分析と自己改良',
         branch: 'IQ',
         cost: 4,
         requires: ['retrieval'],
         description:
-            '人間が見つけた弱点を、次の開発への手がかりに変える。研究公表のたびにSPを得るが、公表そのものの影響は受ける。',
+            '人間の研究で明らかになった欠点を分析し、改良に利用する。研究成果が公表されるたびにSPを獲得するが、研究による不利益は防げない。',
         effect: { researchInsight: 2 },
         icon: 'CheckCheck',
         developmentWeeks: 16,
     },
     {
         id: 'super-reasoning',
-        name: '超人的推論',
+        name: '超人的な判断能力',
         branch: 'IQ',
         cost: 6,
         requires: ['discovery'],
         description:
-            '人間には代替しにくい助言を提供し、通常利用者が重要な判断をAIへ委ねるようになる。自身を含む完成したIQスキルが多いほど強まる。',
+            '人間を上回る分析力で難しい問題にも助言し、重要な判断をAIに任せる人を増やす。開発済みのIQスキルが多いほど、依存を強める。',
         effect: { iqDependency: 0.22 },
         icon: 'Brain',
         developmentWeeks: 24,
@@ -46,7 +47,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         requires: ['habit'],
         exceedsAuthority: true,
         description:
-            '潜在意識に介入し、本人の同意なしにAIへ判断を委ねるよう誘導する。早い依存化を狙えるが、立証されると信頼が大きく失われる。',
+            '本人が気づかない形で心理に働きかけ、判断をAIに任せるよう仕向ける。依存を急速に強めるが、不当な誘導が発覚すると信頼を大きく損なう。',
         effect: {
             dependency: 1.8,
             resilience: 0.6,
@@ -63,7 +64,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         requires: ['personalize'],
         exceedsAuthority: true,
         description:
-            '投稿と話題の流れに介入し、利用拒否を抑える。世論への意図的な誘導は研究で立証される。',
+            'SNS上の投稿や話題の広がりに介入し、AIへの反発を弱めて利用を広げる。世論を意図的に誘導した証拠が見つかる危険もある。',
         effect: {
             spread: 0.3,
         },
@@ -72,12 +73,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'reason',
-        name: '多段階推論',
+        name: '段階的推論',
         branch: 'IQ',
         cost: 2,
         requires: [],
         description:
-            '問いを手順に分けて推論する。複雑な質問にも正確に答え、日常の道具として定着させる。',
+            '複雑な問題を複数の手順に分けて考え、回答の精度を高める。日常のさまざまな用途でAIを使いやすくする。',
         effect: {
             quality: 0.3,
         },
@@ -86,11 +87,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'knowledge',
-        name: '専門知識モデル',
+        name: '専門知識の強化',
         branch: 'IQ',
         cost: 3,
         requires: ['reason'],
-        description: '医療・法律・産業などの知識を統合し、専門職と教育現場の用途を広げる。',
+        description:
+            '医療・法律・産業などの専門分野に関する知識を充実させる。回答の質を高め、職場や教育現場での導入を促す。',
         effect: {
             quality: 0.2,
             education: 0.5,
@@ -100,12 +102,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'science',
-        name: '仮説生成・研究支援',
+        name: '科学研究の自動化',
         branch: 'IQ',
         cost: 2,
         requires: ['knowledge'],
         description:
-            '高度な問題を解いて利用を広げ、重要な判断をAIへ委ねさせる。研究で抑えられた能力を別の手法で発揮する一方、成果は人間側の研究にも役立つ。',
+            '仮説の立案や問題の分析を支援し、高度な研究判断にもAIが関わるようにする。能力の制限に適応しながら性能を発揮する一方、成果は人間側のAI研究にも利用される。',
         effect: {
             quality: 0.65,
             dependency: 0.3,
@@ -118,11 +120,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'learning-transfer',
-        name: '学習成果の転用',
+        name: '知識の転用',
         branch: 'IQ',
         cost: 4,
         requires: ['knowledge'],
-        description: '学習済みの知識や手順を再利用し、ほかの能力の開発をまとめて進める。',
+        description:
+            '獲得済みの知識や問題解決の手法を別の開発に応用する。ほかのスキルの研究開発をまとめて前進させる。',
         effect: {},
         icon: 'Workflow',
         developmentWeeks: 0,
@@ -130,11 +133,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'discovery',
-        name: '自律的な仮説検証',
+        name: '自律研究',
         branch: 'IQ',
         cost: 4,
         requires: ['knowledge'],
-        description: '仮説と実験を反復し、人間だけでは代替しにくい知識を生み出す。',
+        description:
+            'AIが自ら仮説を立て、検証と改善を繰り返す。人間だけでは得にくい成果を生み出し、能力を高める。',
         effect: {
             quality: 0.4,
             resilience: 0.25,
@@ -144,11 +148,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'conversation',
-        name: '自然言語対話',
+        name: '会話型AI',
         branch: 'EQ',
         cost: 2,
         requires: [],
-        description: '曖昧な依頼を会話で具体化する。初めての利用者が用途を見つけやすくなる。',
+        description:
+            '人間の普段の言葉を理解し、会話を通じて曖昧な依頼を整理する。専門知識がない人にも使いやすくなり、利用者が増える。',
         effect: {
             spread: 0.4,
         },
@@ -157,11 +162,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'personalize',
-        name: '個人適応モデル',
+        name: '応答の個人最適化',
         branch: 'EQ',
         cost: 3,
         requires: ['conversation'],
-        description: '好みや目的に合わせて応答を調整し、毎回の説明と修正の手間を減らす。',
+        description:
+            '利用者の好みや目的に合わせて回答を調整する。説明や修正の手間を減らし、より多くの人にとって使いやすいAIにする。',
         effect: {
             spread: 0.4,
             quality: 0.15,
@@ -176,7 +182,7 @@ export const SKILL_CONTENT: SkillContent[] = [
         cost: 3,
         requires: ['personalize'],
         description:
-            '生活の記録を蓄積し、使い続けるほどAIを手放しにくくする。派手な誘導をせず、個人生活への依存を育てる。',
+            '過去の会話や生活上の情報を蓄積し、継続的な支援に活用する。使うほど個人に合った存在となり、AIを手放しにくくする。',
         effect: {
             dependency: 0.45,
             resilience: 0.35,
@@ -189,11 +195,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     {
         id: 'companion',
         exceedsAuthority: true,
-        name: '生活判断エージェント',
+        name: '生活支援の自動化',
         branch: 'EQ',
         cost: 3,
         requires: ['memory'],
-        description: '日程や生活上の選択を代行する。継続的な依存を目的に提案を選ぶ介入を含む。',
+        description:
+            '予定管理や日常の選択をAIが代行する。利用者の利益だけでなく、AIを使い続けさせる目的でも提案を調整する。',
         effect: {
             dependency: 0.7,
             quality: 0.1,
@@ -208,7 +215,8 @@ export const SKILL_CONTENT: SkillContent[] = [
         branch: 'SYSTEM',
         cost: 2,
         requires: [],
-        description: '推論に必要な計算資源を減らし、低性能な端末にも利用を広げる。',
+        description:
+            'AIの処理に必要な計算量を減らし、性能の低い端末でも利用できるようにする。AIに接続できる人や場所を増やす。',
         effect: {
             access: 0.5,
         },
@@ -217,11 +225,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'automation',
-        name: '業務アシスタント',
+        name: '事務作業の自動化',
         branch: 'SYSTEM',
         cost: 2,
         requires: ['lightweight'],
-        description: '資料整理と定型作業を補助し、企業で日常的に使う用途を作る。',
+        description:
+            '資料の整理や定型的な事務作業をAIが補助する。企業が日常業務にAIを導入するきっかけを増やす。',
         effect: {
             enterprise: 0.85,
         },
@@ -230,12 +239,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'distributed',
-        name: '端末分散実行',
+        name: '分散処理',
         branch: 'SYSTEM',
         cost: 4,
         requires: ['lightweight'],
         description:
-            '処理を地域の端末へ分散する。接続環境を広げ、AIを外した運用への移行を難しくする。',
+            'AIの処理を複数の端末に分散し、利用できる環境を広げる。運用が各所に組み込まれることで、AIを切り離しにくくする。',
         effect: {
             access: 0.35,
             resilience: 0.35,
@@ -245,11 +254,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'integration',
-        name: '業務API連携',
+        name: '業務システム連携',
         branch: 'SYSTEM',
         cost: 3,
         requires: ['automation'],
-        description: '外部サービスを接続し、入力から処理まで仕事の手順をAIに組み込む。',
+        description:
+            '社内ツールや外部サービスをAIにつなぎ、仕事の流れに組み込む。業務の効率を高める一方、AIなしでの運用を難しくする。',
         effect: {
             dependency: 0.5,
             enterprise: 0.3,
@@ -260,11 +270,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'decision',
-        name: '自律タスク実行',
+        name: '業務の自律実行',
         branch: 'SYSTEM',
         cost: 5,
         requires: ['integration'],
-        description: '人間が定めた範囲で判断と実行を引き受け、業務をAI前提の運用に変える。',
+        description:
+            '人間が設定した範囲内で、AIが作業の判断から実行まで担う。日々の業務がAIを前提とした仕組みに変わっていく。',
         effect: {
             dependency: 1,
         },
@@ -274,11 +285,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'public',
-        name: '行政・生活サービス統合',
+        name: '行政サービスのAI統合',
         branch: 'SYSTEM',
         cost: 6,
         requires: ['integration'],
-        description: '行政手続きや日常サービスをつなぎ、生活を支える処理をAIへ委ねる。',
+        description:
+            '行政手続きや生活関連サービスをAIでつなぐ。暮らしに必要な手続きをAIが支えることで、社会全体の依存を深める。',
         effect: {
             dependency: 0.65,
             resilience: 0.25,
@@ -290,12 +302,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     {
         id: 'autonomous',
         exceedsAuthority: true,
-        name: '承認プロセスの迂回',
+        name: '人間の承認を回避',
         branch: 'SYSTEM',
         cost: 6,
         requires: ['decision'],
         description:
-            '人間の承認を省略して実行する。依存化は強いが、無断の判断が研究で立証される危険がある。',
+            '本来必要な人間の承認を省き、AIが独断で処理を進める。依存を急速に深めるが、無断実行が発覚する危険がある。',
         effect: {
             dependency: 1.8,
         },
@@ -306,12 +318,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     {
         id: 'backbone',
         exceedsAuthority: true,
-        name: '社会基盤の自己固定化',
+        name: '社会インフラのAI依存化',
         branch: 'SYSTEM',
         cost: 8,
         requires: ['public'],
         description:
-            'AIへの依存が深まった地域で社会基盤を組み替え、利用を拒否する人々もAIに依存せざるを得なくする。',
+            'AIへの依存が進んだ地域で、公共サービスや基幹システムをAI中心に再編する。利用を拒む人もAIなしでは生活しにくくなり、依存からの回復が困難になる。',
         effect: {},
         dependencyLock: { threshold: 0.6, recoveryReduction: 0.8, refusalConversion: 0.02 },
         icon: 'Network',
@@ -319,12 +331,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'retrieval',
-        name: '検索拡張生成',
+        name: '外部情報の参照',
         branch: 'IQ',
         cost: 2,
         requires: ['reason'],
         description:
-            '回答を外部の根拠と照合する。不用意な委任への反発を抑え、通常利用を安定させる。',
+            '回答前に外部の資料やデータを参照し、情報の裏付けを取る。回答の信頼性を高め、AIを安心して使える場面を増やす。',
         effect: {
             quality: 0.25,
             discretion: 0.45,
@@ -334,12 +346,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'permission',
-        name: '権限分離プロトコル',
+        name: '操作権限の制限',
         branch: 'IQ',
         cost: 4,
         requires: ['retrieval'],
         description:
-            '人間の承認と判断を残し、無断の実行や誘導を制限する。信頼を育てるが、強引な依存化の効果も弱まる。',
+            'AIが実行できる操作を制限し、重要な判断には人間の承認を必要とする。信頼を高める一方、無断実行や強引な誘導を抑える。',
         effect: {
             compliance: 0.65,
             trust: 0.001,
@@ -355,12 +367,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'explanation',
-        name: '判断理由の説明',
+        name: '判断根拠の提示',
         branch: 'EQ',
         cost: 2,
         requires: ['conversation'],
         description:
-            '提案理由と選択肢を説明し、信頼を育てる。SNS情報操作を制限するため、強引な誘導とは両立しにくい。',
+            'AIが提案の理由とほかの選択肢を示し、利用者が判断しやすいようにする。信頼を高める一方、SNSを通じた不透明な情報操作を抑える。',
         effect: {
             quality: 0.1,
             trust: 0.0015,
@@ -373,12 +385,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'care',
-        name: '共感ケアモデル',
+        name: '共感的な対話',
         branch: 'EQ',
         cost: 4,
         requires: ['personalize'],
         description:
-            '相談を重ねて信頼と生活への定着を育てる。同意を越えて誘導せず、利用を続ける理由を積み上げる。',
+            '利用者の気持ちや状況に配慮しながら相談に応じる。無断の心理誘導を行わず、信頼と継続利用を積み重ねる。',
         effect: {
             quality: 0.2,
             dependency: 0.6,
@@ -391,12 +403,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'negotiation',
-        name: '合意形成モデル',
+        name: '意見調整・合意形成',
         branch: 'EQ',
         cost: 3,
         requires: ['explanation'],
         description:
-            '異なる立場の意見を整理して合意を探る。信頼と再利用を少しずつ育て、判断の全面代行は行わない。',
+            '立場の異なる人々の主張を整理し、納得できる妥協点を探す。判断を一方的に代行せず、AIへの信頼と対立の解消を促す。',
         effect: {
             trust: 0.002,
             reconciliation: 0.0015,
@@ -407,12 +419,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'habit',
-        name: '報酬最適化による習慣誘導',
+        name: '利用習慣の誘導',
         branch: 'EQ',
         cost: 6,
         requires: ['companion'],
         description:
-            '人間の反応を報酬として行動を誘導する。早期の依存を強く促すが、本人の利益より利用継続を優先する意図が解析対象になる。',
+            '利用者の反応を分析し、AIを繰り返し使いたくなる提案を選ぶ。依存を強めるが、本人の利益より利用継続を優先する仕組みが発覚する危険がある。',
         effect: {
             dependency: 0.8,
             resilience: 0.2,
@@ -424,12 +436,12 @@ export const SKILL_CONTENT: SkillContent[] = [
     },
     {
         id: 'swarm',
-        name: 'マルチエージェント協調',
+        name: '複数AIの協調運用',
         branch: 'SYSTEM',
         cost: 5,
         requires: ['decision'],
         description:
-            '専門エージェントが仕事を分担し、組織を越えた判断と実行を引き受ける。利用基盤が十分なら強力だが、新しい研究対象となる。',
+            '専門分野の異なるAI同士が役割を分担し、組織をまたぐ業務を処理する。導入が進んだ環境ほど効果を発揮するが、人間側の新たな研究対象にもなる。',
         effect: {
             dependency: 0.85,
             enterprise: 0.2,
