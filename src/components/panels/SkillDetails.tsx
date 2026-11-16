@@ -1,5 +1,4 @@
 import { LockKeyhole, TriangleAlert } from 'lucide-react';
-import { responseActive, responseRegionName } from '../../game/research/responses';
 import { skillEffectiveness } from '../../game/skillEffectiveness';
 import { skillStatusLabel } from '../../game/skillRuntime';
 import {
@@ -34,12 +33,6 @@ export function SkillDetails({
             game.skills.includes(item.id) &&
             game.developmentProgress[item.id] >= 1 &&
             skillRestraint(item, skill.id) > 0,
-    );
-    const limits = game.researchProjects.filter(
-        (project) =>
-            responseActive(game, project) &&
-            project.response!.action === 'stop' &&
-            project.response!.skillIds.includes(skill.id),
     );
     const Icon = SKILL_PRESENTATION[skill.id].icon;
     const dependency = hasDependencyEffect(skill);
@@ -104,18 +97,12 @@ export function SkillDetails({
                         </ul>
                     )}
                 </section>
-                {effectiveness && (effectiveness.effective < 0.995 || limits.length > 0) && (
+                {effectiveness && effectiveness.effective < 0.995 && (
                     <SkillEffectiveness
                         value={effectiveness}
                         restraintNames={restraints.map((item) => item.name)}
                     />
                 )}
-                {limits.map((project) => (
-                    <p key={project.id} className="skill-local-limit">
-                        {responseRegionName(project)}で停止中 · 残り
-                        {project.response!.untilWeek - game.week}週
-                    </p>
-                ))}
                 <div className="skill-detail-cost">
                     <span>コスト</span>
                     <strong>

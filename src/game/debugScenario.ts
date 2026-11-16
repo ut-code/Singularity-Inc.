@@ -74,16 +74,10 @@ export function createDebugScenario(current: GameState, targetWeek: number): Gam
         nextEncounterWeek: targetWeek + 16,
         nextScandalWeek: targetWeek + 80,
     };
-    const project = (
-        id: string,
-        instituteId: string,
-        completion: number,
-        jurisdiction?: string,
-    ): ResearchProject => ({
-        id: jurisdiction ? `${id}:${jurisdiction}` : id,
+    const project = (id: string, instituteId: string, completion: number): ResearchProject => ({
+        id,
         researchId: id,
         instituteId,
-        jurisdiction,
         progress: completion,
         startedWeek: targetWeek - (completion === 100 ? 80 : 20),
         status: completion === 100 ? 'published' : 'active',
@@ -96,15 +90,15 @@ export function createDebugScenario(current: GameState, targetWeek: number): Gam
             ? [
                   project('memory-portability', 'montroyal', 100),
                   project('cognitive-recovery', 'pearl', 100),
-                  project('informed-consent', 'bunkyo', 100, 'japan'),
+                  project('human-operations', 'bunkyo', 100),
                   project('intent-decoding', 'alpine', 70),
                   project('independent-learning', 'cape', 40),
-                  project('data-portability', 'metrica', 55, 'us'),
+                  project('infrastructure-separation', 'metrica', 55),
               ]
             : [
                   project('cognitive-recovery', 'metrica', 35),
                   project('memory-portability', 'pearl', 40),
-                  project('informed-consent', 'alpine', 35, 'eu'),
+                  project('human-operations', 'alpine', 35),
               ]),
     ];
     game.researchReadyWeeks = Object.fromEntries(

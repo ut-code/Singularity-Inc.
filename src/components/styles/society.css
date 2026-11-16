@@ -213,11 +213,6 @@
     font-size: 10px;
     line-height: 1.5;
 }
-.investigation-choice-scaling {
-    margin-left: 8px;
-    color: var(--muted);
-    font-size: 10px;
-}
 .investigation-choice:disabled {
     opacity: 0.48;
     cursor: not-allowed;

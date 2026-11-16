@@ -8,7 +8,7 @@ export function infrastructureDependency(game: GameState, index: number) {
     return SKILLS.reduce((converted, skill) => {
         const lock = skill.dependencyLock;
         if (!lock || area.dependent < lock.threshold) return converted;
-        return converted + area.antiAI * lock.refusalConversion * skillScale(game, skill.id, index);
+        return converted + area.antiAI * lock.refusalConversion * skillScale(game, skill.id);
     }, 0);
 }
 
@@ -17,7 +17,7 @@ export function recoveryMultiplier(game: GameState, index: number) {
     return SKILLS.reduce((remaining, skill) => {
         const lock = skill.dependencyLock;
         if (!lock || game.areas[index].dependent < lock.threshold) return remaining;
-        const strength = skillScale(game, skill.id, index);
+        const strength = skillScale(game, skill.id);
         return remaining * (1 - lock.recoveryReduction * strength);
     }, 1);
 }

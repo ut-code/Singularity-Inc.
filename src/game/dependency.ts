@@ -59,7 +59,7 @@ export function dependencyDynamics(
             effect.discretion * 0.5,
     );
     const socialSupport = 1 - clamp((area.dependent - 0.85) / 0.13) * area.dependent;
-    const intentPressure = research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(game, index);
+    const intentPressure = research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(game);
     const recoveryRate =
         // 回復支援の導入率には運用能力を織り込み済み。現地の高依存で二重に抑えない。
         ((0.0008 +

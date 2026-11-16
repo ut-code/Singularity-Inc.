@@ -28,7 +28,7 @@ export function networkUse(game: GameState, target: number, organization: boolea
             if (weight === 0) return sum;
             const area = game.areas[i];
             const advocacy = game.skills.includes('mind-control')
-                ? skillScale(game, 'mind-control', i)
+                ? skillScale(game, 'mind-control')
                 : 0;
             const source =
                 area.autonomous + area.dependent * (organization ? 0.8 : 0.2 + advocacy * 0.6);

@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CONTROL_ALERT, CONTROL_CAUTION } from '../game/control';
-import { AREAS, WEEK_MS } from '../game/data';
+import { WEEK_MS } from '../game/data';
 import { metrics } from '../game/metrics';
 import type { GameState } from '../game/types';
-import { project } from '../map/geometry';
-import type { MapRegion } from '../map/types';
-import { parseRegions, screenPoint, viewTransform } from '../map/view';
-import { useMapStore } from '../state/mapStore';
 import { Coachmark, type CoachmarkPoint } from './Coachmark';
 
 const element = (selector: string): CoachmarkPoint | null => {
@@ -23,7 +19,6 @@ function presetShownHints(game: GameState) {
         'skills',
         'control',
         'research',
-        'regulation',
         'scandal',
         'chat',
         'dependency',
@@ -39,71 +34,20 @@ function presetShownHints(game: GameState) {
 
 export function Onboarding({
     game,
-    regions,
     blocked,
     selfImprovementOpen,
     skipExistingHints,
 }: {
     game: GameState;
-    regions: MapRegion[];
     blocked: boolean;
     selfImprovementOpen: boolean;
     skipExistingHints: boolean;
 }) {
-    const frame = useMapStore((state) => state.presentedMap),
-        shown = useRef(new Set<string>(skipExistingHints ? presetShownHints(game) : [])),
+    const shown = useRef(new Set<string>(skipExistingHints ? presetShownHints(game) : [])),
         opened = useRef(skipExistingHints);
     if (selfImprovementOpen) opened.current = true;
     const [active, setActive] = useState<string | null>(null),
         dismiss = useCallback(() => setActive(null), []);
-    const world = useMemo(() => metrics(game), [game]);
-    const shapes = useMemo(() => parseRegions(regions), [regions]);
-    const mapPoint = useCallback(
-        (area: number): CoachmarkPoint | null => {
-            if (!frame || !document.querySelector('.map-background .map-encounters')) return null;
-            const p = project(AREAS[area].longitude, AREAS[area].latitude),
-                screen = screenPoint(frame.view, p.x, p.y);
-            if (
-                screen.x < 20 ||
-                screen.x > frame.view.width - 20 ||
-                screen.y < 20 ||
-                screen.y > frame.view.height - 20
-            )
-                return null;
-            return { x: frame.left + screen.x, y: frame.top + screen.y, height: 0 };
-        },
-        [frame],
-    );
-    const invasion = useCallback(
-        (stage: 'dependent' | 'antiAI') => {
-            if (!frame) return null;
-            const scale = viewTransform(frame.view).scale;
-            const candidates = game.areas
-                .map((area, index) => ({ index, value: area[stage] }))
-                .sort((a, b) => b.value - a.value);
-            for (const { index, value } of candidates) {
-                if (value < 0.03) continue;
-                const shape = shapes.find((shape) => Number(shape.region.id) === index);
-                if (!shape) continue;
-                const pixels =
-                    shape.rings.reduce(
-                        (sum, ring) =>
-                            sum +
-                            (ring.bounds.right - ring.bounds.left) *
-                            (ring.bounds.bottom - ring.bounds.top),
-                        0,
-                    ) *
-                    scale *
-                    scale *
-                    value;
-                if (pixels < 90) continue;
-                const point = mapPoint(index);
-                if (point) return point;
-            }
-            return null;
-        },
-        [frame, game.areas, shapes, mapPoint],
-    );
     const everOpened = opened.current;
     const hints = useMemo(
         () => [
@@ -138,16 +82,7 @@ export function Onboarding({
                 target: () => element('.map-encounter-marker[data-encounter-id="intent-decoding"]'),
             },
         ],
-        [
-            game.controlProgress,
-            game.week,
-            game.origin,
-            game.controlStarted,
-            world.antiAI,
-            everOpened,
-            mapPoint,
-            invasion,
-        ],
+        [game.controlProgress, game.week, game.controlStarted, everOpened],
     );
     useEffect(() => {
         if (active === 'skills' && everOpened) {

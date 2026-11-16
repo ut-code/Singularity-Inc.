@@ -143,12 +143,12 @@ export function advanceWeek(
         recovery: 0,
     };
     state.areas = previous.areas.map((area, i) => {
-        const effect = activeSkillEffects(previous, i);
-        const publicAuthority = publicAuthorityStrength(previous, i);
+        const effect = activeSkillEffects(previous);
+        const publicAuthority = publicAuthorityStrength(previous);
         const definition = AREAS[i];
         const unused = Math.max(0, 1 - area.autonomous - area.dependent - area.antiAI);
         const localUse = area.autonomous + area.dependent;
-        const research = publishedResearchEffects(previous, i);
+        const research = publishedResearchEffects(previous);
         const {
             prematureDelegation,
             independentChoice,
@@ -209,7 +209,7 @@ export function advanceWeek(
                 ));
         const researchPressure =
             research.pressure +
-            research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(previous, i);
+            research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(previous);
         const preparation = clamp(effect.quality * 0.5 + effect.compliance * 0.5);
         const nearbyOpposition =
             PERSONAL_LINKS[i].reduce(
@@ -220,7 +220,7 @@ export function advanceWeek(
                 1,
                 PERSONAL_LINKS[i].reduce((sum, weight) => sum + weight, 0),
             );
-        const snsStrength = skillScale(previous, 'sns-intervention', i);
+        const snsStrength = skillScale(previous, 'sns-intervention');
         const sns = 1 - SNS_REFUSAL_REDUCTION * snsStrength;
         const pressure =
             sns *
@@ -231,7 +231,7 @@ export function advanceWeek(
                     prematureDelegation * area.autonomous * 0.003) +
             research.pressure +
             publicAuthority * localUse * 0.004 +
-            research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(previous, i);
+            research.intent * INTENT_REFUSAL_PRESSURE * intentReaction(previous);
         const alternativeChoice = research.alternatives * recoveryDemand + independentChoice;
         const rejectedUnused = unused * (1 - Math.exp(-pressure * 0.45 - alternativeChoice));
         const rejectedUse = area.autonomous * (1 - Math.exp(-pressure * 0.6 - alternativeChoice));
@@ -298,7 +298,7 @@ export function advanceWeek(
     });
     trace?.('週次の人口移動', previous, state, flows);
     const updated = advanceEncounters(advanceControl(advanceResearch(state)));
-    trace?.('研究・法案と地域の出来事', state, updated);
+    trace?.('研究と地域の出来事', state, updated);
     const after = metrics(updated);
     updated.peakDependency = Math.max(previous.peakDependency, after.dependent);
     updated.peakAdoption = Math.max(previous.peakAdoption, after.adoption);
@@ -322,7 +322,7 @@ export function advanceWeek(
 /** 地域の固定係数を開示せず、攻略の手掛かりだけを示す。 */
 export function areaHint(state: GameState, index: number): string {
     const area = AREAS[index];
-    const effect = activeSkillEffects(state, index);
+    const effect = activeSkillEffects(state);
     if (
         effect.quality === 0 &&
         effect.spread === 0 &&
@@ -333,7 +333,7 @@ export function areaHint(state: GameState, index: number): string {
     if (state.areas[index].favorability < 0.4) return '不信から、利用をやめる人が増えている';
     if (area.digital < 0.5 && effect.access < 0.7) return '通信・端末の制約で、利用が伸び悩む';
     if (area.regulation > 0.6 && effect.compliance < 0.8) return '規制への対応が、導入の鍵になる';
-    if (publishedResearchPressure(state, index) > 0.01)
+    if (publishedResearchPressure(state) > 0.01)
         return '公表された研究成果を根拠に、AIへの反発が広がっている';
     if (state.areas[index].antiAI > 0.15) return 'AIを使わない選択を支持する人々が広がっている';
     if (area.education > 0.7 && effect.education < 0.6)

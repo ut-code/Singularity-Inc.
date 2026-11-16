@@ -62,7 +62,7 @@ function runCase(job: Job) {
         missedChats: missed('chat'),
         missedEvents: missed('event'),
         responseCounts: Object.fromEntries(
-            ['cooperate', 'pressure', 'stop'].map((action) => [
+            ['pressure'].map((action) => [
                 action,
                 decisions.filter((item) => item.kind === 'response' && item.choice === action)
                     .length,
@@ -105,10 +105,7 @@ function summarize(rows: Row[]) {
         meanMissedChats: average((row) => row.missedChats),
         meanMissedEvents: average((row) => row.missedEvents),
         meanResponses: Object.fromEntries(
-            ['cooperate', 'pressure', 'stop'].map((action) => [
-                action,
-                average((row) => row.responseCounts[action]),
-            ]),
+            ['pressure'].map((action) => [action, average((row) => row.responseCounts[action])]),
         ),
         meanSpentByBranch: Object.fromEntries(
             ['IQ', 'EQ', 'SYSTEM'].map((branch) => [

@@ -9,7 +9,6 @@ import {
 } from '../../content/social.ts';
 import { metrics, type WorldHistoryPoint } from '../metrics.ts';
 import { seededValue } from '../random.ts';
-import { JURISDICTIONS } from '../regions.ts';
 import { skillScale } from '../skillRuntime.ts';
 import { SKILLS } from '../skills.ts';
 import type { GameState } from '../types.ts';
@@ -69,11 +68,9 @@ function addPost(
     game: GameState,
     templates: SocialTemplate[],
     {
-        region = '',
         week = game.week,
         intervention = false,
     }: {
-        region?: string;
         week?: number;
         intervention?: boolean;
     } = {},
@@ -102,9 +99,7 @@ function addPost(
         week,
         author,
         intervention,
-        text: template.text.replace(/\{(ai|region)\}/g, (_, token: string) =>
-            token === 'ai' ? game.name : region,
-        ),
+        text: template.text.replaceAll('{ai}', () => game.name),
     };
     return {
         ...feed,
@@ -119,12 +114,6 @@ function interventionTemplates(game: GameState) {
     if (world.antiAI >= 0.1 || world.favorability < 0.5 || game.exposedSkills.length > 0)
         templates.push(...INTERVENTION_POSTS.criticism);
     if (world.dependent >= 0.4) templates.push(...INTERVENTION_POSTS.dependence);
-    if (
-        game.researchProjects.some(
-            (project) => project.status === 'published' && project.jurisdiction,
-        )
-    )
-        templates.push(...INTERVENTION_POSTS.regulation);
     return templates;
 }
 
@@ -157,10 +146,7 @@ export function seedSocialFeed(game: GameState): SocialFeed {
             .slice(-2)) {
             const templates = RESEARCH_POSTS[project.researchId];
             if (!templates) continue;
-            const region = project.jurisdiction
-                ? JURISDICTIONS.find((item) => item.id === project.jurisdiction)!.name
-                : '';
-            feed = addPost(feed, game, templates, { region, week: project.publishedWeek! });
+            feed = addPost(feed, game, templates, { week: project.publishedWeek! });
         }
         const observable = SKILLS.filter((skill) => skillTemplates(game, skill.id));
         for (const skill of observable.slice(-2)) feed = addPost(feed, game, SKILL_POSTS[skill.id]);
@@ -198,10 +184,7 @@ export function advanceSocialFeed(
             continue;
         const templates = RESEARCH_POSTS[project.researchId];
         if (!templates) continue;
-        const region = project.jurisdiction
-            ? JURISDICTIONS.find((item) => item.id === project.jurisdiction)!.name
-            : '';
-        next = addPost(next, game, templates, { region });
+        next = addPost(next, game, templates);
     }
     for (const id of game.skills) {
         if (before.skills.includes(id) && before.developmentProgress[id] >= 1) continue;

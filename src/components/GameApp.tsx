@@ -114,15 +114,8 @@ export function GameApp({
                     id: project.id,
                     project,
                     title: topic.name,
-                    kind:
-                        topic.category === 'regulation'
-                            ? ('regulation' as const)
-                            : ('investigation' as const),
-                    stage: responseActive(game, project)
-                        ? '対応中'
-                        : topic.category === 'regulation'
-                          ? '審議中'
-                          : '研究中',
+                    kind: 'investigation' as const,
+                    stage: responseActive(game, project) ? '停止中' : '研究中',
                     location: instituteFor(project),
                 };
             }),
@@ -206,7 +199,6 @@ export function GameApp({
                         key={`hints:${session}`}
                         skipExistingHints={debugPreset}
                         game={game}
-                        regions={regions}
                         blocked={blocked}
                         selfImprovementOpen={researchOpen}
                     />

@@ -10,7 +10,7 @@ import { researchPresentation } from './researchPresentation';
 export interface MapEncounter {
     id: string;
     title: string;
-    kind: 'investigation' | 'regulation' | 'event' | 'chat';
+    kind: 'investigation' | 'event' | 'chat';
     project?: ResearchProject;
     encounter?: EncounterState;
     week?: number;

@@ -327,11 +327,6 @@
     color: var(--muted);
     font-size: inherit;
 }
-.skill-details .skill-local-limit {
-    margin: 5px 0;
-    color: var(--text-secondary);
-    font-size: 11px;
-}
 .performance-skill-info .performance-skill-suppression {
     color: var(--warning);
 }

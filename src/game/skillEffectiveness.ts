@@ -21,8 +21,8 @@ export function skillEffectiveness(game: GameState): Record<string, SkillEffecti
             // 使用済みの即時効果には、その後の能力制限を表示しない。
             if (skill.developmentAdvanceWeeks && game.skills.includes(skill.id)) continue;
             const weight = AREAS[i].population;
-            const operating = clamp(playerRestrictionScale(game, skill.id, i));
-            const protectedFraction = 1 - researchRestrictionScale(game, skill.id, i);
+            const operating = clamp(playerRestrictionScale(game, skill.id));
+            const protectedFraction = 1 - researchRestrictionScale(game, skill.id);
             sums[skill.id].potential += weight;
             sums[skill.id].decision += weight * (1 - operating);
             sums[skill.id].research += weight * operating * protectedFraction;

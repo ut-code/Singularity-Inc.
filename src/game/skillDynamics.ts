@@ -39,9 +39,7 @@ export function deployedDependency(game: GameState, index: number, ignoreResearc
         if (dependency === 0) continue;
         const strength =
             dependency *
-            (ignoreResearch
-                ? playerRestrictionScale(game, skill.id, index)
-                : skillScale(game, skill.id, index)) *
+            (ignoreResearch ? playerRestrictionScale(game, skill.id) : skillScale(game, skill.id)) *
             skillReadiness(game, index, skill);
         deployed[DEPENDENCY_DOMAINS[skill.id]] += strength;
         if (!skill.exceedsAuthority) deployed.consensual += strength;

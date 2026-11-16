@@ -7,7 +7,7 @@ import {
     responseBlockReason,
 } from '../src/game/research/responses.ts';
 import { researchRate, researchTopic } from '../src/game/research/system.ts';
-import { skillRestrictionScale, skillScale } from '../src/game/skillRuntime.ts';
+import { skillRestrictionScale } from '../src/game/skillRuntime.ts';
 import { developingSkills, SKILLS, skillBlockReason } from '../src/game/skills.ts';
 import {
     chooseEncounter,
@@ -148,60 +148,28 @@ function chooseOpportunities(previous: GameState, decisions: Decision[]) {
     return game;
 }
 
-/** 次の開発費を確保し、協力・短期間の遅延に意味がある場合だけ対応する。 */
+/** 次の開発費を確保し、終盤に重要な対策研究の完成を遅らせる。 */
 function respond(previous: GameState, reserve: number, decisions: Decision[]) {
     let game = previous;
     for (const project of game.researchProjects) {
         if (project.status !== 'active' || project.response) continue;
         const topic = researchTopic(project);
-        const world = metrics(game);
         const remaining = (100 - project.progress) / researchRate(game, project);
-        const providers = SKILLS.filter(
-            (skill) => (skill.effect.dependency ?? 0) > 0 && skillScale(game, skill.id) > 0,
-        );
-        const target = topic.targets.length === 1 ? skillsById.get(topic.targets[0]) : undefined;
-        const alternatives = providers
-            .filter((skill) => skill.id !== target?.id)
-            .reduce(
-                (sum, skill) => sum + (skill.effect.dependency ?? 0) * skillScale(game, skill.id),
-                0,
-            );
-        const preferred = [
-            {
-                action: 'cooperate' as const,
-                when:
-                    project.progress >= (game.skills.includes('counterexample-learning') ? 45 : 65),
-            },
-            {
-                action: 'stop' as const,
-                when:
-                    remaining <= RESPONSE_WEEKS &&
-                    topic.suppression >= 0.5 &&
-                    !!target?.effect.dependency &&
-                    alternatives >= target.effect.dependency * 4,
-            },
-            {
-                action: 'pressure' as const,
-                when:
-                    remaining <= RESPONSE_WEEKS &&
-                    world.dependent >= 0.75 &&
-                    (topic.suppression >= 0.4 || !!topic.ongoing.intent),
-            },
-        ];
-        const choice = preferred.find(
-            ({ action, when }) =>
-                when &&
-                game.skillPoints >= reserve + RESPONSE_COST[action] &&
-                !responseBlockReason(game, project, action),
-        );
-        if (!choice) continue;
-        game = respondToResearch(game, project.id, choice.action);
+        if (
+            remaining > RESPONSE_WEEKS ||
+            metrics(game).dependent < 0.75 ||
+            (topic.suppression < 0.4 && !topic.ongoing.intent && !topic.ongoing.recovery) ||
+            game.skillPoints < reserve + RESPONSE_COST.pressure ||
+            responseBlockReason(game, project, 'pressure')
+        )
+            continue;
+        game = respondToResearch(game, project.id, 'pressure');
         decisions.push({
             week: game.week,
             kind: 'response',
             id: project.id,
-            choice: choice.action,
-            sp: RESPONSE_COST[choice.action],
+            choice: 'pressure',
+            sp: RESPONSE_COST.pressure,
         });
     }
     return game;

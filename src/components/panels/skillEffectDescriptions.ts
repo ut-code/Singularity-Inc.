@@ -64,14 +64,14 @@ export function skillEffectDescriptions(skill: Skill) {
     if (effect.researchAdaptation)
         add(
             `研究による他のスキルの効果低下を${Math.round(effect.researchAdaptation * 100)}%軽減`,
-            '法規制・自分の制限は対象外',
+            '自分で取得した制限は対象外',
         );
     if (skill.developmentAdvanceWeeks)
         add(`取得時、開発中の全スキルを${skill.developmentAdvanceWeeks}週分進める`);
     if (effect.researchDelay)
         add(
             '通常研究の開始を遅延',
-            `新たに条件を満たしてから候補になるまで平均${effect.researchDelay}週待機。法案・AI制御研究は対象外`,
+            `新たに条件を満たしてから候補になるまで平均${effect.researchDelay}週待機。AI制御研究は対象外`,
         );
     if (effect.resilience) add(`依存からの回復を抑制（${strength(effect.resilience)}）`);
     if (skill.dependencyLock) {

@@ -1,6 +1,5 @@
 import { ShieldCheck } from 'lucide-react';
 import { controlEfficiency } from '../../game/control';
-import { JURISDICTIONS } from '../../game/regions';
 import { instituteFor } from '../../game/research/locations';
 import { RESPONSE_LABEL, responseActive } from '../../game/research/responses';
 import { researchEfficiency, researchTopic } from '../../game/research/system';
@@ -29,21 +28,17 @@ export function ResearchProjectPanel({
 }) {
     const project = game.researchProjects.find((item) => item.id === id)!;
     const topic = researchTopic(project);
-    const regulation = topic.category === 'regulation';
     const institute = instituteFor(project);
-    const scope = project.jurisdiction
-        ? JURISDICTIONS.find((item) => item.id === project.jurisdiction)!.name
-        : '全世界';
     const { Icon, label, color } = researchPresentation(project);
-    const effects = researchEffectGroups(topic, project);
+    const effects = researchEffectGroups(topic);
     const modifiers: string[] = [];
     if (activeSkillEffects(game).researchSupport > 0) modifiers.push('仮説生成・研究支援');
     if (responseActive(game, project)) modifiers.push(RESPONSE_LABEL[project.response!.action]);
     return (
         <IncidentPanelFrame
             title={topic.name}
-            heading={regulation ? `${scope}の規制当局` : institute.name}
-            label={`${label} · ${scope}`}
+            heading={institute.name}
+            label={`${label} · 全世界`}
             description={topic.question}
             Icon={Icon}
             color={color}
@@ -55,16 +50,13 @@ export function ResearchProjectPanel({
                     value={researchEfficiency(game, project)}
                     modifiers={modifiers}
                 />
-                <ResearchProgress
-                    project={project}
-                    label={regulation ? '法案の進捗' : '研究の進捗'}
-                />
+                <ResearchProgress project={project} label="研究の進捗" />
             </div>
             <ResearchResponses game={game} project={project} onClose={onClose} />
             <div className="investigation-effect-groups">
                 {[
                     {
-                        title: regulation ? '成立時の効果' : '公表時の効果',
+                        title: '公表時の効果',
                         items: effects.publication,
                     },
                     { title: '継続する効果', items: effects.ongoing },
