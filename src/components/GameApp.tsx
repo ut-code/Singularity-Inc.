@@ -29,7 +29,7 @@ import { SocietyPanel } from './society/SocietyPanel';
 import { useAnimationSpeed } from './useAnimationSpeed';
 import { WorldMap } from './WorldMap';
 import { WorldMetricsWidget } from './WorldMetricsWidget';
-import { WorldNews } from './WorldNews';
+/*import { WorldNews } from './WorldNews';*/
 import { percent, population } from './widgets';
 
 type Panel =
