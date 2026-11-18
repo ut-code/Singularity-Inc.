@@ -190,11 +190,11 @@ export function GameApp({
                         onToggle={() => togglePanel({ kind: 'world' })}
                         onOpenControl={() => togglePanel({ kind: 'control' })}
                     />
-                    <WorldNews
+                    {/*<WorldNews
                         key={`news:${session}`}
                         game={game}
                         speed={blocked ? 0 : game.speed}
-                    />
+                    />*/}
                     <Onboarding
                         key={`hints:${session}`}
                         skipExistingHints={debugPreset}
