@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleCheck, CircleX } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { calendarParts } from '../game/calendar';
 import type { GameState } from '../game/types';
 import { useGameStore } from '../state/gameStore';
@@ -33,18 +33,15 @@ export function Result({
 }) {
     const history = useGameStore((state) => state.worldHistory);
     const won = game.outcome === 'victory';
-    const Icon = won ? CircleCheck : CircleX;
     return (
-        <Modal label="ゲーム結果" className="result-panel" closeOnEscape={false}>
+        <Modal
+            label="ゲーム結果"
+            className={`result-panel ${won ? 'result-victory' : 'result-defeat'}`}
+            closeOnEscape={false}
+        >
             <header className="result-header" data-victory={won}>
                 <div className="result-title">
-                    <Icon
-                        className="result-status-icon"
-                        size={32}
-                        strokeWidth={1.5}
-                        aria-hidden="true"
-                    />
-                    <h1>{won ? 'クリア' : '敗北'}</h1>
+                    <h1>{won ? '勝利' : '敗北'}</h1>
                 </div>
                 <p className="result-description">{resultDescription(game)}</p>
                 <dl className="result-context">

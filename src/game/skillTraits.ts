@@ -15,6 +15,7 @@ export function skillTraits(skill: Skill) {
     const dependency =
         (effect.dependency ?? 0) +
         (effect.resilience ?? 0) * 0.7 +
+        (effect.workContinuity ?? 0) * 0.7 +
         (skill.id === 'sns-intervention' ? 0.15 : 0);
     return {
         trust: (effect.trust ?? 0) >= 0.002 ? '大きく上昇' : (effect.trust ?? 0) > 0 ? '上昇' : '—',
@@ -30,8 +31,8 @@ export function skillTraits(skill: Skill) {
                       : 'なし',
         dependency: skill.dependencyLock
             ? '高依存地域を維持'
-            : effect.iqDependency
-              ? '取得IQ数に比例'
+            : effect.delegationSupport
+              ? '他系列の委任を補助'
               : dependency >= 1
                 ? '極高'
                 : dependency >= 0.6

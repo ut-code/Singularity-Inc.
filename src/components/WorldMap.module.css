@@ -10,29 +10,26 @@
     overflow: hidden;
 }
 :global(body) {
-    background: #080f13;
+    background: var(--surface-page);
 }
 .viewport {
     width: 100%;
     height: 100%;
     overflow: hidden;
     position: relative;
-    background: #080f13;
-    cursor: grab;
+    background: var(--surface-page);
+    cursor: default;
     touch-action: none;
     user-select: none;
     outline: none;
 }
 .viewport:focus-visible {
-    box-shadow: inset 0 0 0 1px #b7c6cc;
+    box-shadow: inset 0 0 0 1px var(--accent);
 }
 .canvas {
     display: block;
     width: 100%;
     height: 100%;
-}
-.dragging {
-    cursor: grabbing;
 }
 .screenReaderOnly {
     position: absolute;
@@ -43,25 +40,6 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-}
-.error {
-    position: absolute;
-    left: 24px;
-    bottom: 24px;
-    color: #f7b6a8;
-    font-size: 14px;
-}
-.loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    max-width: calc(100% - 32px);
-    margin: 0;
-    padding: 12px 16px;
-    font-size: 13px;
-    text-align: center;
-    pointer-events: none;
 }
 .metricChanges {
     position: absolute;
@@ -82,7 +60,7 @@
     font-size: 8px;
     font-weight: 600;
     line-height: 11px;
-    text-shadow: 0 1px 2px #080f13;
+    text-shadow: 0 1px 2px #0b0b0b;
     white-space: nowrap;
     animation: metric-fade linear both;
 }

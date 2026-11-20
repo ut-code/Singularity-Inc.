@@ -37,6 +37,7 @@ export interface ChatDefinition extends EncounterBase {
 }
 export interface EventDefinition extends EncounterBase {
     kind: 'event';
+    scope: 'regional' | 'global';
     onDeadline: EventImpact;
     choices: EventChoice[];
 }

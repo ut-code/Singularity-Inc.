@@ -1,6 +1,6 @@
 import { AREAS } from './data.ts';
 import { clamp } from './metrics.ts';
-import { playerRestrictionScale, skillScale } from './skillRuntime.ts';
+import { activeSkillEffects, playerRestrictionScale, skillScale } from './skillRuntime.ts';
 import { SKILLS } from './skills.ts';
 import type { GameState, Skill, SkillDomain } from './types.ts';
 
@@ -26,16 +26,22 @@ export function skillReadiness(game: GameState, index: number, skill: Skill) {
 
 export function deployedDependency(game: GameState, index: number, ignoreResearch = false) {
     const deployed = { work: 0, personal: 0, judgment: 0, consensual: 0 };
-    const iqCount = SKILLS.filter(
-        (skill) =>
-            skill.branch === 'IQ' &&
-            game.skills.includes(skill.id) &&
-            game.developmentProgress[skill.id] >= 1,
-    ).length;
+    const support = ignoreResearch
+        ? SKILLS.reduce(
+              (sum, skill) =>
+                  sum +
+                  (game.skills.includes(skill.id) && game.developmentProgress[skill.id] >= 1
+                      ? (skill.effect.delegationSupport ?? 0) *
+                        playerRestrictionScale(game, skill.id)
+                      : 0),
+              0,
+          )
+        : activeSkillEffects(game).delegationSupport;
     for (const skill of SKILLS) {
         const effect = skill.effect;
         if (!game.skills.includes(skill.id) || game.developmentProgress[skill.id] < 1) continue;
-        const dependency = (effect.dependency ?? 0) + (effect.iqDependency ?? 0) * iqCount;
+        // 判断力だけでは委任を生まない。EQ・SYSTEMで導入した運用だけを補助する。
+        const dependency = (effect.dependency ?? 0) * (skill.branch === 'IQ' ? 1 : 1 + support);
         if (dependency === 0) continue;
         const strength =
             dependency *

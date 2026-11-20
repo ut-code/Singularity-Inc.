@@ -37,11 +37,11 @@ export function WorldMetricsWidget({
                     <strong>{percent(values.adoption)}</strong>
                 </span>
                 <span className="world-number dependency-number" title="世界のAI依存率100%で勝利">
-                    <span>AI依存 / 100%</span>
+                    <span>AI依存</span>
                     <strong>{percent(values.dependent)}</strong>
                 </span>
                 <span className="world-number opposition-number" title="世界の利用拒否率100%で敗北">
-                    <span>利用拒否 / 100%</span>
+                    <span>利用拒否</span>
                     <strong>{percent(values.antiAI)}</strong>
                 </span>
             </button>

@@ -119,16 +119,15 @@ export function advanceEncounters(game: GameState): GameState {
             (item.status === 'pending' || item.status === 'responded') &&
             game.week >= item.deadline,
     );
-    let areas = game.areas,
-        news = game.news;
+    let news = game.news;
     for (const item of expired) {
         const definition = encounterDefinition(item);
         if (definition.kind !== 'event') continue;
         const impact = definition.onDeadline;
         const choice = definition.choices.find((choice) => choice.id === item.choiceId);
         const mitigation = choice?.mitigation;
-        areas = areas.map((area, index) => {
-            if (index !== item.area) return area;
+        const areas = game.areas.map((area, index) => {
+            if (definition.scope === 'regional' && index !== item.area) return area;
             const recovered =
                 area.dependent *
                 impact.recover *
@@ -151,20 +150,19 @@ export function advanceEncounters(game: GameState): GameState {
                 ),
             };
         });
+        game = recordInstantPopulationChanges(game, areas, definition.scope);
         news = [
             ...news,
             {
                 id: `event-impact:${item.id}`,
                 week: game.week,
                 title: `${definition.title}の影響が広がった`,
-                summary: choice
-                    ? '対応で影響を抑えたが、利用拒否と不信が広がった。'
-                    : '対応がないまま、利用拒否と不信が広がった。',
-                region: AREAS[item.area].name,
+                summary: choice ? choice.result : '対応がないまま、被害が広がった。',
+                region: definition.scope === 'global' ? '全世界' : AREAS[item.area].name,
             },
         ];
     }
-    game = { ...recordInstantPopulationChanges(game, areas), news };
+    game = { ...game, news };
     const encounters = game.encounters.map((item) =>
         (item.status === 'pending' || item.status === 'responded') && game.week >= item.deadline
             ? {

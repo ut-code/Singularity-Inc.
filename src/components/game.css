@@ -1,5 +1,6 @@
 /* 共通設定、メイン画面、各パネルの順に読み込む。 */
 @import "./styles/theme.css";
+@import "./styles/startup.css";
 @import "./styles/main-screen.css";
 @import "./styles/research.css";
 @import "./styles/dialogs.css";

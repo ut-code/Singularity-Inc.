@@ -1,5 +1,4 @@
 import { AREAS } from './data.ts';
-import { REGULAR_SP_INTERVAL_WEEKS } from './economy.ts';
 import { researchTopic } from './research/system.ts';
 import { SKILLS } from './skills.ts';
 import type { GameState } from './types.ts';
@@ -37,10 +36,6 @@ export function updateNotifications(
             `AIエージェント「${game.name}」の使用が「${AREAS[game.origin].name}」で始まりました`,
             'event',
         );
-    const regular =
-        Math.floor(game.week / REGULAR_SP_INTERVAL_WEEKS) -
-        Math.floor(before.week / REGULAR_SP_INTERVAL_WEEKS);
-    if (regular > 0) add(`sp:${game.week}`, `定期支給 · +${regular} SP`, 'milestone');
     for (const skill of SKILLS)
         if (
             game.skills.includes(skill.id) &&

@@ -1,20 +1,19 @@
 import { AREAS, WORLD_POPULATION } from '../src/game/data.ts';
 import { advanceWeek, createGame, learnSkill, metrics, startGame } from '../src/game/engine.ts';
 import {
-    RESPONSE_COST,
     RESPONSE_WEEKS,
     respondToResearch,
     responseBlockReason,
+    responseCost,
 } from '../src/game/research/responses.ts';
 import { researchRate, researchTopic } from '../src/game/research/system.ts';
-import { skillRestrictionScale } from '../src/game/skillRuntime.ts';
-import { developingSkills, SKILLS, skillBlockReason } from '../src/game/skills.ts';
+import { SKILLS, skillBlockReason, skillCost } from '../src/game/skills.ts';
 import {
     chooseEncounter,
     encounterChange,
     encounterDefinition,
 } from '../src/game/society/encounters.ts';
-import type { GameState } from '../src/game/types.ts';
+import type { Difficulty, GameState } from '../src/game/types.ts';
 import {
     POLICIES,
     type PolicyFamily,
@@ -36,6 +35,7 @@ export interface Decision {
     sp: number;
 }
 export interface PlayOptions {
+    difficulty?: Difficulty;
     family: PolicyFamily;
     timing: PolicyTiming;
     origin: number;
@@ -73,7 +73,7 @@ function nextSkill(
         const candidate = prerequisite(id);
         if (!candidate) continue;
         const skill = skillsById.get(candidate)!;
-        if (purchase === 'affordable' && game.skillPoints < skill.cost) continue;
+        if (purchase === 'affordable' && game.skillPoints < skillCost(game, skill)) continue;
         // 目的が立証された後は、研究開始の遅延より全能力の維持を優先する。
         if (
             skill.effect.researchDelay &&
@@ -83,20 +83,6 @@ function nextSkill(
             )
         )
             continue;
-        if (skill.developmentAdvanceWeeks) {
-            const advance = skill.developmentAdvanceWeeks * skillRestrictionScale(game, skill.id);
-            const savedWeeks = developingSkills(game).reduce(
-                (sum, item) =>
-                    sum +
-                    Math.min(
-                        advance,
-                        (1 - game.developmentProgress[item.id]) * item.developmentWeeks,
-                    ),
-                0,
-            );
-            // 端数だけの前進にSPを使わず、他の開発目標へ進む。
-            if (savedWeeks < skill.developmentAdvanceWeeks - 1e-9) continue;
-        }
         return skill;
     }
     return null;
@@ -159,8 +145,8 @@ function respond(previous: GameState, reserve: number, decisions: Decision[]) {
             remaining > RESPONSE_WEEKS ||
             metrics(game).dependent < 0.75 ||
             (topic.suppression < 0.4 && !topic.ongoing.intent && !topic.ongoing.recovery) ||
-            game.skillPoints < reserve + RESPONSE_COST.pressure ||
-            responseBlockReason(game, project, 'pressure')
+            game.skillPoints < reserve + responseCost(project) ||
+            responseBlockReason(game, project)
         )
             continue;
         game = respondToResearch(game, project.id, 'pressure');
@@ -169,7 +155,7 @@ function respond(previous: GameState, reserve: number, decisions: Decision[]) {
             kind: 'response',
             id: project.id,
             choice: 'pressure',
-            sp: RESPONSE_COST.pressure,
+            sp: responseCost(project),
         });
     }
     return game;
@@ -179,6 +165,7 @@ function respond(previous: GameState, reserve: number, decisions: Decision[]) {
 export function simulatePolicy(options: PlayOptions) {
     const {
         family,
+        difficulty = 'hard',
         origin,
         seed,
         interval,
@@ -189,7 +176,7 @@ export function simulatePolicy(options: PlayOptions) {
         weekLimit = 1200,
         trace = false,
     } = options;
-    let game = startGame(createGame(seed), origin);
+    let game = startGame(createGame(seed, origin, undefined, difficulty), origin);
     let delegationWeek: number | null = null;
     let intentPublication: {
         week: number;
@@ -230,12 +217,13 @@ export function simulatePolicy(options: PlayOptions) {
             for (let count = 0; count < SKILLS.length; count++) {
                 const skill = nextSkill(game, family, delegationWeek !== null, purchase);
                 if (!skill || skillBlockReason(game, skill)) break;
+                const cost = skillCost(game, skill);
                 game = learnSkill(game, skill.id);
-                decisions.push({ week: game.week, kind: 'skill', id: skill.id, sp: skill.cost });
+                decisions.push({ week: game.week, kind: 'skill', id: skill.id, sp: cost });
             }
             if (responses === 'selective') {
-                const reserve =
-                    nextSkill(game, family, delegationWeek !== null, purchase)?.cost ?? 0;
+                const next = nextSkill(game, family, delegationWeek !== null, purchase);
+                const reserve = next ? skillCost(game, next) : 0;
                 game = respond(game, reserve, decisions);
             }
         }

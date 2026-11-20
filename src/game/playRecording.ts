@@ -1,6 +1,7 @@
 import { ENCOUNTERS } from '../content/encounters';
 import { RESEARCH_TOPICS } from '../content/research';
 import { WEEK_MS } from './data';
+import { DIFFICULTY_SETTINGS } from './difficulty';
 import { metrics } from './metrics';
 import { SKILLS } from './skills';
 import type { GameState } from './types';
@@ -29,6 +30,8 @@ export function beginRecording(game: GameState): PlayRecording {
         actions: [],
         regions: [],
         rules: {
+            difficulty: game.difficulty,
+            ...DIFFICULTY_SETTINGS[game.difficulty],
             weekMilliseconds: WEEK_MS,
             skills: SKILLS,
             research: RESEARCH_TOPICS,

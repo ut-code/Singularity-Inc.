@@ -1,4 +1,7 @@
 /* 世界地図上のHUD・時計・地域情報 */
+.skill-tree-button {
+    position: relative;
+}
 .game-shell,
 .map-background {
     position: absolute;
@@ -400,16 +403,6 @@
         width: 100%;
         justify-content: space-between;
     }
-}
-
-.map-legend .countermeasure-swatch {
-    width: 13px;
-    height: 10px;
-    border-radius: 2px;
-    border: 1px solid #4a94ad;
-    background:
-        repeating-linear-gradient(135deg, transparent 0 3px, #4a94ad 3px 4px, transparent 4px 6px),
-        #294d5a;
 }
 
 .countermeasure-trigger {

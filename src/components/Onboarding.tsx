@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CONTROL_ALERT, CONTROL_CAUTION } from '../game/control';
-import { WEEK_MS } from '../game/data';
+import { GAME_SPEED_MULTIPLIER, WEEK_MS } from '../game/data';
 import { metrics } from '../game/metrics';
 import type { GameState } from '../game/types';
 import { Coachmark, type CoachmarkPoint } from './Coachmark';
@@ -54,13 +54,13 @@ export function Onboarding({
             {
                 id: 'control-alert',
                 when: game.controlProgress >= CONTROL_ALERT,
-                text: 'AI制御研究が完成間近です。100%で敗北します',
+                text: 'AI制御研究が完成間近。100%で敗北',
                 target: () => element('.control-hud'),
             },
             {
                 id: 'control-caution',
                 when: game.controlProgress >= CONTROL_CAUTION,
-                text: 'AI制御研究が進展しています。100%で敗北します',
+                text: 'AI制御研究が進展中。100%で敗北',
                 target: () => element('.control-hud'),
             },
             {
@@ -72,13 +72,13 @@ export function Onboarding({
             {
                 id: 'control',
                 when: game.controlStarted,
-                text: 'AI制御研究が100%になると敗北します',
+                text: 'AI制御研究が100%になると敗北',
                 target: () => element('.control-hud'),
             },
             {
                 id: 'critical',
                 when: true,
-                text: 'AIの目的に関する重要研究です',
+                text: 'AIの目的に関する重要研究',
                 target: () => element('.map-encounter-marker[data-encounter-id="intent-decoding"]'),
             },
         ],
@@ -112,7 +112,7 @@ export function Onboarding({
             point={point}
             text={hint.text}
             tailSide={point.x < window.innerWidth / 2 ? 'left' : 'right'}
-            speed={game.speed}
+            speed={game.speed * GAME_SPEED_MULTIPLIER}
             onExpire={dismiss}
         />
     );

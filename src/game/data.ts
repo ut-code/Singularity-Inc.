@@ -7,11 +7,13 @@ export const STAGE_COLORS = ['#778496', '#55bce6', '#ef424e', '#e4b565'];
 export const DEFEAT_OPPOSITION = 0.9995;
 // 月5秒に相当する、元の週1.25秒で進める。
 export const WEEK_MS = 1_250;
+// 週数で定義したゲームバランスを保ち、通常速度を従来の2倍にする。
+export const GAME_SPEED_MULTIPLIER = 2;
 // 演出も指定された再生速度に従う。
 export const ANIMATION_SPEED = 1;
 // 固定方針の診断上限。目標プレイ時間や敗北条件ではない。
 export const SIMULATION_WEEKS = 480;
-export const START_YEAR = 2027;
+export const START_YEAR = 2025;
 export const START_MONTH = 4;
 export const START_DAY = 1;
 export const WORLD_POPULATION = AREAS.reduce((sum, area) => sum + area.population, 0);

@@ -5,7 +5,8 @@ import type { EncounterState } from './society/types.ts';
 export type Branch = 'IQ' | 'EQ' | 'SYSTEM';
 export type SkillDomain = 'work' | 'personal' | 'judgment';
 export type Outcome = 'playing' | 'victory' | 'autonomy' | 'forgotten' | 'controlled';
-export type GameSpeed = 0 | 1 | 2 | 4;
+export type GameSpeed = 0 | 1 | 2;
+export type Difficulty = 'normal' | 'hard';
 export type Language =
     | 'english'
     | 'spanish'
@@ -40,9 +41,10 @@ export interface AreaState {
     favorability: number;
 }
 export interface GameState {
-    /** 研究・法案・イベント・チャットによる即時人口移動の累積値（地図演出用）。 */
+    /** 即時人口移動の地図演出用累積値。世界規模の小さい変化は表示量を補正する。 */
     instantPopulationChanges?: Pick<AreaState, 'autonomous' | 'dependent' | 'antiAI'>[];
     seed: number;
+    difficulty: Difficulty;
     name: string;
     week: number;
     started: boolean;
@@ -71,7 +73,8 @@ export interface GameState {
 export interface SkillEffect {
     researchDelay?: number;
     researchInsight?: number;
-    iqDependency?: number;
+    delegationSupport?: number;
+    developmentSpeed?: number;
     spread?: number;
     quality?: number;
     access?: number;
@@ -80,6 +83,7 @@ export interface SkillEffect {
     enterprise?: number;
     dependency?: number;
     resilience?: number;
+    workContinuity?: number;
     discretion?: number;
     researchSupport?: number;
     researchAdaptation?: number;
@@ -101,7 +105,7 @@ export interface Skill {
     };
     exceedsAuthority?: boolean;
     developmentWeeks: number;
-    developmentAdvanceWeeks?: number;
+    developmentDiscount?: { minimumCost: number; amount: number };
     domain?: SkillDomain;
     restrains?: Record<string, number>;
     restrainsOthers?: number;

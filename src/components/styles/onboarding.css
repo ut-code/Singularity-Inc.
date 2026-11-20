@@ -77,9 +77,3 @@
         animation: none;
     }
 }
-.map-encounter-marker.chat .map-research-progress {
-    --progress-color: #a6b8c5;
-}
-.map-encounter-marker.event .map-research-progress {
-    --progress-color: var(--warning);
-}

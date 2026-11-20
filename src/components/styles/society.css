@@ -19,6 +19,11 @@
     background: transparent;
     filter: brightness(1.15) drop-shadow(0 2px 3px #000b);
 }
+.map-encounter-marker.investigation[data-critical="true"] {
+    transform: translate(-50%, -100%) scale(1.25);
+    transform-origin: 50% 100%;
+    z-index: 1;
+}
 .map-encounter-icon {
     position: absolute;
     left: 5px;
@@ -32,7 +37,7 @@
     border: 2px solid currentColor;
     border-radius: 50%;
     color: var(--danger);
-    background: #0d1a22cc;
+    background: var(--surface-overlay);
 }
 .society-heading {
     display: flex;
@@ -87,9 +92,9 @@
     transform: translateX(-50%);
     white-space: nowrap;
     font-size: 10px;
-    color: #edf2f7;
-    background: #172432e6;
-    border-radius: 3px;
+    color: var(--text);
+    background: var(--surface-overlay);
+    border-radius: var(--radius-control);
     padding: 1px 4px;
 }
 .map-research-progress {

@@ -22,7 +22,7 @@ import {
     type SocialFeed,
     seedSocialFeed,
 } from '../game/society/social';
-import type { GameSpeed, GameState } from '../game/types';
+import type { Difficulty, GameSpeed, GameState } from '../game/types';
 
 interface GameStore {
     game: GameState | null;
@@ -31,7 +31,8 @@ interface GameStore {
     session: number;
     debugPreset: boolean;
     notifications: NotificationState;
-    initialize: (seed?: number) => void;
+    initialize: (seed?: number, difficulty?: Difficulty) => void;
+    setDifficulty: (difficulty: Difficulty) => void;
     start: (origin: number) => void;
     setName: (name: string) => void;
     tick: () => void;
@@ -90,9 +91,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         session: 0,
         debugPreset: false,
         notifications: { items: [], seen: new Set() },
-        initialize: (seed = Date.now()) =>
+        initialize: (seed = Date.now(), difficulty = 'normal') =>
             set((state) => {
-                const game = createGame(seed);
+                const game = createGame(seed, 0, undefined, difficulty);
                 recording = null;
                 return {
                     game,
@@ -103,6 +104,8 @@ export const useGameStore = create<GameStore>((set, get) => {
                     notifications: createNotifications(),
                 };
             }),
+        setDifficulty: (difficulty) =>
+            change((game) => (game.started ? game : { ...game, difficulty })),
         setName: (name) =>
             change((game) => ({ ...game, name: name.trim() || createGame(game.seed).name })),
         start: (origin) => change((game) => startGame(game, origin)),

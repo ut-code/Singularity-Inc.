@@ -6,60 +6,81 @@
     grid-template-rows: minmax(0, 1fr) auto;
     overflow: clip;
     isolation: isolate;
-    background: var(--surface-page);
+    background: transparent;
+}
+.map-background[data-blurred="true"] {
+    filter: blur(8px) saturate(0.55);
 }
 .start-map {
     position: absolute;
-    inset: -24px;
+    inset: -18px;
     z-index: -2;
-    width: calc(100% + 48px);
-    height: calc(100% + 48px);
-    object-fit: cover;
-    filter: blur(9px) brightness(0.48) saturate(0.6);
+    width: calc(100% + 36px);
+    height: calc(100% + 36px);
+    display: block;
+    pointer-events: none;
+    filter: blur(8px) saturate(0.55);
+}
+.start-map-error {
+    position: absolute;
+    right: 24px;
+    bottom: 90px;
+    left: 24px;
+    text-align: center;
+    color: var(--danger);
 }
 .start-screen::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(180deg, #10182018, #10182033 55%, #101820cc);
+    background: radial-gradient(
+        ellipse at 50% 45%,
+        #08121b33 0%,
+        #08121b66 40%,
+        #050c14b3 76%,
+        #03070dee 100%
+    );
 }
 .start-content {
-    align-self: center;
-    padding: 80px 24px 30px;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(100px, 26dvh, 300px) 24px 24px;
     text-align: center;
 }
 .start-content h1 {
-    width: fit-content;
-    max-width: 100%;
-    margin: 0 auto 58px;
-    font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
-    font-size: clamp(44px, 7.5vw, 108px);
-    font-weight: 200;
-    line-height: 1.2;
-    letter-spacing: 0.035em;
-    color: #fff;
-    text-shadow: 0 0 28px #ffffff30;
+    width: min(76vw, 1020px);
+    margin: 0;
+    line-height: 0;
 }
 .start-content h1::after {
     content: "";
     display: block;
-    width: 100%;
+    width: 90%;
     height: 1px;
-    margin: 28px auto 0;
-    background: #ffffff55;
+    margin: 12px auto 0;
+    background: var(--line-strong);
 }
-.title-start {
-    min-width: 224px;
-    min-height: 52px;
-    padding: 14px 28px;
-    border-color: #ffffff55;
-    background: #10182040;
-    color: #fff;
-    font-size: 14px;
-    letter-spacing: 0.12em;
+.start-logo {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.start-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 240px;
+    gap: 12px;
+    margin-top: clamp(32px, 5dvh, 56px);
+}
+.start-actions > button {
+    min-height: 48px;
 }
 .start-credits {
+    grid-row: 2;
     padding: 28px 24px 30px;
     text-align: center;
     color: var(--text-secondary);
@@ -81,6 +102,15 @@
 .license-link:hover {
     color: #fff;
     background: var(--surface-hover);
+}
+.start-credits .license-link {
+    margin: 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+}
+.start-credits .license-link:hover {
+    color: var(--text);
 }
 .license-link:focus-visible,
 .license-back:focus-visible {
@@ -129,36 +159,140 @@
     color: var(--accent);
     text-underline-offset: 3px;
 }
+.game-introduction {
+    display: grid;
+    place-items: center;
+    pointer-events: auto;
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+    padding: clamp(20px, 4dvh, 48px) 20px;
+}
+.introduction-content {
+    width: min(100%, 760px);
+    margin: 0 auto;
+    max-height: calc(100dvh - clamp(40px, 8dvh, 96px));
+    overflow-y: auto;
+    padding: clamp(32px, 4vw, 40px);
+}
+.introduction-content h1 {
+    margin: 0 0 32px;
+    font-size: var(--heading-size);
+    font-weight: 500;
+}
+.introduction-body {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.8;
+}
+.introduction-body h2 {
+    margin: 24px 0 8px;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 500;
+}
+.introduction-body h2:first-child {
+    margin-top: 0;
+}
+.introduction-body p {
+    margin: 0 0 20px;
+}
+.entry-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 148px));
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 40px;
+}
+.entry-navigation button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 12px;
+    font-size: 14px;
+    pointer-events: auto;
+}
+.difficulty-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.difficulty-option {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    background: var(--surface-overlay);
+    color: var(--text);
+    text-align: left;
+}
+.difficulty-option strong {
+    font-size: 16px;
+    font-weight: 500;
+}
+.difficulty-option[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--surface-selected);
+}
 .entry-description {
     margin: 0;
     color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.9;
 }
-/* 地図を操作する領域と、選んだ拠点を確定する領域を分ける。 */
+/* 説明から開始地点の選択まで、同じ全画面の地図を表示し続ける。 */
 .origin-selection {
     position: fixed;
     inset: 0;
+    pointer-events: none;
+}
+.origin-selection[data-step="setup"] {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 304px;
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    gap: 24px;
-    padding: 28px 32px;
-    background: var(--surface-page);
+    place-items: center;
+    overflow-y: auto;
+    padding: clamp(20px, 4dvh, 48px) 20px;
+}
+.origin-selection .introduction-content {
+    pointer-events: auto;
+}
+.origin-navigation {
+    position: absolute;
+    right: 24px;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    left: 24px;
+}
+.origin-navigation .entry-navigation {
+    margin-top: 0;
+}
+.origin-prompt {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 12px 24px;
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.4;
+    white-space: nowrap;
 }
 .origin-heading {
-    grid-column: 1 / -1;
-}
-.origin-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 0;
-    color: var(--muted);
-    border: 0;
-    background: transparent;
-    font-size: 12px;
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    padding: 12px 20px;
+    pointer-events: none;
 }
 .origin-heading h1 {
     margin: 8px 0;
@@ -169,14 +303,6 @@
     margin: 0;
     color: var(--text-secondary);
     font-size: 13px;
-}
-.origin-map {
-    position: relative;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-panel);
 }
 .origin-markers {
     position: absolute;
@@ -269,11 +395,21 @@
     background: transparent;
 }
 .origin-briefing {
-    align-self: center;
+    pointer-events: auto;
+    position: absolute;
+    top: 50%;
+    right: 24px;
+    width: min(360px, calc(100% - 32px));
+    max-height: calc(100% - 48px);
+    overflow-y: auto;
+    transform: translateY(-50%);
     padding: 24px;
+    transition:
+        right 400ms ease,
+        transform 400ms ease;
 }
 .origin-briefing-copy {
-    min-height: 230px;
+    min-height: 180px;
 }
 .origin-briefing h2 {
     margin: 0 0 12px;
@@ -303,46 +439,46 @@
     margin: 6px 0 0;
     color: var(--text-secondary);
 }
-.origin-empty-icon {
-    margin-bottom: 20px;
-    color: var(--accent);
-}
-.origin-start {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    min-height: 48px;
-    font-size: 14px;
-}
-.origin-objective {
-    grid-column: 1 / -1;
-    margin: 0;
-    color: var(--muted);
-    font-size: 12px;
-    text-align: center;
-}
 /* 勝敗と決着理由を先に示し、その下でプレイの経過を振り返る。 */
 .modal.result-panel {
     width: min(880px, calc(100vw - 40px));
     padding: 28px 32px;
+    animation: result-appear 600ms ease-out both;
+}
+.result-victory {
+    --result-offset: 10px;
+}
+.result-defeat {
+    --result-offset: 0px;
+}
+@keyframes result-appear {
+    from {
+        opacity: 0;
+        transform: translateY(var(--result-offset));
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes result-victory-glow {
+    0%,
+    100% {
+        text-shadow: 0 0 0 transparent;
+    }
+    35% {
+        text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 65%, transparent);
+    }
 }
 .result-header {
     padding-bottom: 22px;
     border-bottom: 1px solid var(--line);
 }
 .result-title {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     color: var(--danger);
 }
 .result-header[data-victory="true"] .result-title {
     color: var(--accent);
-}
-.result-status-icon {
-    flex: none;
 }
 .result-panel h1 {
     margin: 0;
@@ -351,6 +487,9 @@
     font-weight: 600;
     line-height: 1.4;
     letter-spacing: 0.04em;
+}
+.result-victory .result-title h1 {
+    animation: result-victory-glow 1100ms ease-out both;
 }
 .result-description {
     margin: 14px 0 0;
@@ -476,37 +615,70 @@
     }
 }
 @media (max-width: 700px) {
+    .origin-prompt {
+        top: 16px;
+        padding: 10px 20px;
+        font-size: 18px;
+    }
+    .origin-navigation {
+        right: 16px;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        left: 16px;
+    }
+    .entry-navigation {
+        gap: 12px;
+    }
+    .entry-navigation button {
+        gap: 6px;
+        padding-inline: 8px;
+        font-size: 13px;
+        letter-spacing: normal;
+        text-indent: 0;
+    }
+    .game-introduction,
+    .origin-selection[data-step="setup"] {
+        padding-inline: 16px;
+    }
+    .difficulty-options {
+        grid-template-columns: 1fr;
+    }
     .start-content {
-        padding-top: 50px;
+        padding-top: 24dvh;
     }
     .start-content h1 {
-        margin-bottom: 44px;
+        width: 92vw;
+    }
+    .start-actions {
+        margin-top: 44px;
     }
     .start-credits {
         padding-bottom: max(20px, env(safe-area-inset-bottom));
         font-size: 10px;
     }
-    .origin-selection {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto minmax(240px, 1fr) auto auto;
-        gap: 16px;
-        padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
-        overflow-y: auto;
+    .origin-heading {
+        top: 12px;
+        left: 16px;
+        padding: 8px 12px;
     }
     .origin-heading h1 {
-        margin: 0 0 8px;
-        font-size: 24px;
+        margin: 0;
+        font-size: 20px;
     }
     .origin-marker-label {
         padding: 5px 8px;
         font-size: 12px;
     }
     .origin-briefing {
-        align-self: stretch;
-        padding: 20px;
+        top: auto;
+        right: 16px;
+        bottom: 16px;
+        max-height: min(45dvh, calc(100dvh - 76px));
+        transform: none;
+        padding: 16px;
     }
     .origin-briefing-copy {
-        min-height: 160px;
+        min-height: 0;
+        margin-bottom: 16px;
     }
     .origin-briefing h2 {
         margin-bottom: 6px;
@@ -519,18 +691,39 @@
         margin: 12px 0 16px;
     }
 }
+@media (max-width: 700px), (max-height: 600px) {
+    .introduction-content {
+        padding: 24px;
+    }
+    .introduction-content h1 {
+        margin-bottom: 24px;
+    }
+    .entry-navigation {
+        margin-top: 32px;
+    }
+}
 @media (max-height: 600px) {
     .start-content {
-        padding: 24px 24px 12px;
+        padding: 12dvh 24px 12px;
     }
     .start-content h1 {
-        margin-bottom: 24px;
-        font-size: clamp(32px, 8dvh, 64px);
+        width: min(76vw, 900px);
     }
-    .start-content h1::after {
-        margin-top: 16px;
+    .start-actions {
+        margin-top: 28px;
+        gap: 4px;
     }
     .start-credits {
         padding: 8px 24px max(12px, env(safe-area-inset-bottom));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal.result-panel,
+    .result-victory .result-title h1 {
+        animation: none;
+    }
+    .origin-briefing {
+        transition: none;
     }
 }

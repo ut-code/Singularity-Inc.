@@ -118,7 +118,7 @@
 }
 .tree-branch {
     fill: none;
-    stroke: #47636e;
+    stroke: var(--line-strong);
     stroke-width: 2;
     opacity: 0.55;
 }
@@ -127,7 +127,7 @@
     opacity: 0.9;
 }
 .tree-origin {
-    fill: #142e38;
+    fill: var(--surface-panel);
     stroke: var(--accent);
     stroke-width: 2;
 }
@@ -209,11 +209,11 @@
     border-color: var(--line-strong);
 }
 .tree-node.available {
-    border-color: color-mix(in srgb, var(--accent) 65%, #273547);
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--surface-panel));
 }
 .tree-node.owned {
     background: color-mix(in srgb, var(--accent) 12%, var(--surface-panel));
-    border-color: color-mix(in srgb, var(--accent) 55%, #273547);
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--surface-panel));
 }
 .tree-node[aria-pressed="true"] {
     outline: 2px solid var(--accent);
@@ -293,7 +293,7 @@
     overflow: hidden;
     height: 6px;
     margin: 9px 0;
-    border-radius: 3px;
+    border-radius: var(--radius-control);
     background: var(--line);
     border: 0;
 }
@@ -340,7 +340,7 @@
     color: var(--warning);
 }
 .skill-traits .dependency-trait {
-    color: #b3a2bd;
+    color: var(--text-secondary);
 }
 .skill-restraints {
     margin: 16px 0;
@@ -365,14 +365,14 @@
 }
 .skill-importance-note {
     padding: 10px;
-    border-left: 2px solid #d7ad65;
-    background: #d7ad650d;
+    border-left: 2px solid var(--warning);
+    background: color-mix(in srgb, var(--warning) 5%, transparent);
 }
 .skill-importance-note > strong {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #f3cd8b;
+    color: var(--warning);
 }
 .skill-importance-note > p {
     margin: 6px 0 0;
@@ -386,7 +386,7 @@
 }
 .skill-detail-heading > span:first-child {
     padding: 2px 7px;
-    border-radius: 4px;
+    border-radius: var(--radius-control);
     background: var(--surface-selected);
     font-weight: 600;
 }
@@ -407,16 +407,6 @@
 }
 .skill-effect-list {
     margin: 16px 0;
-    color: var(--text-secondary);
-    font-size: 12px;
-}
-.skill-effect-list ul {
-    margin: 0;
-    padding-left: 16px;
-    list-style: disc;
-}
-.skill-effect-list li {
-    padding: 4px 0;
 }
 .skill-effect-detail {
     display: block;

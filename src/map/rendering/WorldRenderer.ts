@@ -28,7 +28,6 @@ export interface MapScene {
 export interface MapData {
     regions: MapRegion[];
     areaStates: AreaState[];
-    humanProtection: number[];
     serverArea: number;
     selectedArea: number | null;
     speed: number;
@@ -382,12 +381,7 @@ export class WorldRenderer {
                 ? WEEK_MS / 1000
                 : 2 / ANIMATION_SPEED;
         }
-        if (
-            reset ||
-            old.areaStates !== data.areaStates ||
-            old.humanProtection !== data.humanProtection
-        )
-            this.paletteDirty = true;
+        if (reset || old.areaStates !== data.areaStates) this.paletteDirty = true;
         if (reset) {
             this.waveElapsed = 0;
         }
@@ -460,9 +454,6 @@ export class WorldRenderer {
             const antiAI = Math.floor(area.antiAI * 65535);
             bytes[1024 + offset] = antiAI >> 8;
             bytes[1024 + offset + 1] = antiAI & 255;
-            const protection = Math.round(this.data!.humanProtection[index] * 65535);
-            bytes[1024 + offset + 2] = protection >> 8;
-            bytes[1024 + offset + 3] = protection & 255;
         });
         const gl = this.gl;
         gl.bindTexture(gl.TEXTURE_2D, this.textures.palette);
@@ -532,11 +523,22 @@ export class WorldRenderer {
     }
 
     private draw = (now: number) => {
+        try {
+            this.drawFrame(now);
+        } catch (error) {
+            cancelAnimationFrame(this.frame);
+            this.frame = 0;
+            this.callbacks.error(error);
+        }
+    };
+
+    private drawFrame(now: number) {
         this.frame = 0;
         if (
             !this.alive ||
             document.hidden ||
             !this.data ||
+            !this.loaded ||
             this.loaded !== this.requested ||
             this.view.width === 0 ||
             this.view.height === 0
@@ -642,7 +644,7 @@ export class WorldRenderer {
             this.callbacks.ready();
         }
         if (animated) this.frame = requestAnimationFrame(this.draw);
-    };
+    }
 
     dispose() {
         this.alive = false;

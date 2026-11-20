@@ -122,7 +122,7 @@ function publish(game: GameState, project: ResearchProject): GameState {
             )
                 exposedSkills.add(id);
     return {
-        ...recordInstantPopulationChanges(published, areas),
+        ...recordInstantPopulationChanges(published, areas, 'global'),
         skillPoints: game.skillPoints + insight,
         areas,
         exposedSkills: [...exposedSkills],

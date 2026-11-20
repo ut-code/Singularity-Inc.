@@ -1,8 +1,8 @@
 import { WEEK_MS } from './data.ts';
+import { DIFFICULTY_SETTINGS } from './difficulty.ts';
 import { metrics } from './metrics.ts';
 import type { GameState } from './types.ts';
 
-const CONTROL_WORK = 220;
 const CONTROL_START_WEEK = Math.ceil(60_000 / WEEK_MS);
 const CONTROL_START_ADOPTION = 0.1;
 
@@ -21,7 +21,7 @@ export function controlRate(game: GameState) {
         world.adoption < CONTROL_START_ADOPTION
     )
         return 0;
-    return controlEfficiency(game) / CONTROL_WORK;
+    return controlEfficiency(game) / DIFFICULTY_SETTINGS[game.difficulty].controlWork;
 }
 
 export function advanceControl(game: GameState): GameState {

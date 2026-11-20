@@ -1,10 +1,10 @@
 import { TriangleAlert } from 'lucide-react';
 import {
-    RESPONSE_COST,
     RESPONSE_LABEL,
     RESPONSE_WEEKS,
     responseActive,
     responseBlockReason,
+    responseCost,
 } from '../../game/research/responses';
 import type { ResearchProject } from '../../game/research/types';
 import type { GameState } from '../../game/types';
@@ -34,7 +34,7 @@ export function ResearchResponses({
             </div>
         );
     if (project.status !== 'active') return null;
-    const reason = responseBlockReason(game, project, 'pressure');
+    const reason = responseBlockReason(game, project);
     return (
         <section className="investigation-responses" aria-label="研究への対応">
             <div className="investigation-responses-heading">
@@ -53,7 +53,7 @@ export function ResearchResponses({
                 <span className="investigation-choice-body">
                     <span className="investigation-choice-title">
                         <strong>{RESPONSE_LABEL.pressure}</strong>
-                        <small>{RESPONSE_COST.pressure} SP</small>
+                        <small>{responseCost(project)} SP</small>
                     </span>
                     <span className="investigation-choice-effects">
                         <span>研究の進行を{RESPONSE_WEEKS}週間停止</span>

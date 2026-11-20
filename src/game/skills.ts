@@ -3,6 +3,22 @@ import type { GameState, Skill } from './types.ts';
 
 export const SKILLS: Skill[] = SKILL_CONTENT;
 
+/** 開発完了後の費用削減は、取得するスキルの元の費用を基準に適用する。 */
+export function skillCost(state: Pick<GameState, 'skills' | 'developmentProgress'>, skill: Skill) {
+    const discount = SKILLS.reduce((sum, source) => {
+        const benefit = source.developmentDiscount;
+        if (
+            !benefit ||
+            !state.skills.includes(source.id) ||
+            state.developmentProgress[source.id] < 1 ||
+            skill.cost < benefit.minimumCost
+        )
+            return sum;
+        return sum + benefit.amount;
+    }, 0);
+    return skill.cost - discount;
+}
+
 export function developingSkills(state: Pick<GameState, 'skills' | 'developmentProgress'>) {
     return SKILLS.filter(
         (skill) => state.skills.includes(skill.id) && state.developmentProgress[skill.id] < 1,
@@ -18,8 +34,9 @@ export function skillRestraint(skill: Skill, targetId: string) {
 export function hasDependencyEffect(skill: Skill) {
     return Boolean(
         skill.effect.dependency ||
-            skill.effect.iqDependency ||
+            skill.effect.delegationSupport ||
             skill.effect.resilience ||
+            skill.effect.workContinuity ||
             skill.dependencyLock,
     );
 }
@@ -45,9 +62,7 @@ export function skillBlockReason(
         return state.skills.includes(skill.requires[0])
             ? '前提スキルの完成待ち'
             : '前提スキルの開発が必要';
-    if (skill.developmentAdvanceWeeks && developingSkills(state).length === 0)
-        return '開発中のスキルがありません';
-    const cost = skill.cost;
+    const cost = skillCost(state, skill);
     if (state.skillPoints < cost) return `${cost - state.skillPoints} SP不足`;
     return null;
 }

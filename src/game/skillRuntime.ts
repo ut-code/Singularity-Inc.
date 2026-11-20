@@ -8,7 +8,8 @@ const ADAPTATION_SKILLS = SKILLS.filter((skill) => skill.effect.researchAdaptati
 const EMPTY_EFFECTS: Required<SkillEffect> = {
     researchDelay: 0,
     researchInsight: 0,
-    iqDependency: 0,
+    delegationSupport: 0,
+    developmentSpeed: 0,
     spread: 0,
     quality: 0,
     access: 0,
@@ -17,6 +18,7 @@ const EMPTY_EFFECTS: Required<SkillEffect> = {
     enterprise: 0,
     dependency: 0,
     resilience: 0,
+    workContinuity: 0,
     discretion: 0,
     researchSupport: 0,
     researchAdaptation: 0,
@@ -33,7 +35,6 @@ export const SNS_RECONCILIATION = 0.016;
 export function skillStatusLabel(game: GameState, id: string) {
     const progress = game.developmentProgress[id];
     if (progress < 1) return `開発中 ${Math.floor(progress * 100)}%`;
-    if (SKILLS.find((skill) => skill.id === id)!.developmentAdvanceWeeks) return '使用済み';
     if (game.exposedSkills.includes(id)) return '介入が発覚';
     const lock = SKILLS.find((skill) => skill.id === id)!.dependencyLock;
     if (lock) {
@@ -94,8 +95,9 @@ export function playerRestrictionScale(game: GameState, id: string): number {
     }
     return scale;
 }
-export function advanceSkillDevelopment(game: GameState, weeks = 1) {
+export function advanceSkillDevelopment(game: GameState) {
     const progress = { ...game.developmentProgress };
+    const weeks = 1 + activeSkillEffects(game).developmentSpeed;
     for (const id of game.skills) {
         if (progress[id] >= 1) continue;
         const skill = SKILLS.find((item) => item.id === id)!;

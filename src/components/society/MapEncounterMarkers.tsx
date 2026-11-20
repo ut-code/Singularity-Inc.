@@ -44,7 +44,8 @@ export function MapEncounterMarkers({
                     : {
                           Icon: MessageSquare,
                           label: encounter.kind === 'chat' ? '人物からの連絡' : 'イベント',
-                          color: encounter.kind === 'chat' ? '#c7d2db' : 'var(--danger)',
+                          color:
+                              encounter.kind === 'chat' ? 'var(--text-secondary)' : 'var(--danger)',
                           severity: 'normal',
                       };
                 const { Icon, label, color, severity } = presentation;
