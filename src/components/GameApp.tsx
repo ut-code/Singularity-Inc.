@@ -164,7 +164,7 @@ export function GameApp({
                 };
             }),
         ...game.encounters
-            .filter((item) => item.status === 'pending' || item.status === 'responded')
+            .filter((item) => item.status === 'pending')
             .map((item) => {
                 const definition = encounterDefinition(item);
                 return {
@@ -172,12 +172,7 @@ export function GameApp({
                     title: definition.title,
                     encounter: item,
                     week: game.week,
-                    stage:
-                        definition.kind === 'chat'
-                            ? 'チャット'
-                            : item.status === 'responded'
-                              ? '対応済み'
-                              : 'イベント',
+                    stage: definition.kind === 'chat' ? 'チャット' : 'イベント',
                     kind: definition.kind,
                     location: AREAS[item.area],
                 };

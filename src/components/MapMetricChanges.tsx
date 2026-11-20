@@ -66,7 +66,7 @@ export function MapMetricChanges({
             })),
         [states, populationChanges],
     );
-    const previous = useRef({ areaStates, tick, serverArea });
+    const previous = useRef({ areaStates, populationChanges, tick, serverArea });
     const baseline = useRef(areaStates.map((state) => ({ ...state })));
     const sequence = useRef(0);
     const appearances = useRef<MetricAppearance[]>([]);
@@ -81,7 +81,7 @@ export function MapMetricChanges({
 
     useEffect(() => {
         const before = previous.current;
-        previous.current = { areaStates, tick, serverArea };
+        previous.current = { areaStates, populationChanges, tick, serverArea };
         // 新規ゲーム・巻き戻しは指標の変化として通知しない。
         if (tick < before.tick || serverArea !== before.serverArea) {
             baseline.current = areaStates.map((state) => ({ ...state }));
@@ -102,7 +102,11 @@ export function MapMetricChanges({
             const j = Math.floor(Math.random() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        const available = MAX_POPUPS - popups.filter((popup) => popup.expires > now).length;
+        const instant = populationChanges !== before.populationChanges;
+        // 即時効果は既存の通知で枠が埋まっていても表示し、古い通知から置き換える。
+        const available = instant
+            ? MAX_POPUPS
+            : MAX_POPUPS - popups.filter((popup) => popup.expires > now).length;
         const selected = spreadMetricChanges(shuffled, Math.max(0, available));
         const scheduled = scheduleMetricChanges(
             selected,
@@ -132,9 +136,13 @@ export function MapMetricChanges({
             ];
         });
         setPopups((current) => {
-            return [...current.filter((popup) => popup.expires > now), ...incoming];
+            const active = current.filter((popup) => popup.expires > now);
+            const retained = active.slice(
+                Math.max(0, active.length + incoming.length - MAX_POPUPS),
+            );
+            return [...retained, ...incoming];
         });
-    }, [areaStates, tick, serverArea, shapes, popups]);
+    }, [areaStates, populationChanges, tick, serverArea, shapes, popups]);
 
     useLayoutEffect(() => {
         // CSSの実時間と通知のゲーム内時間を揃える。速度変更・停止でも途中位置を保つ。

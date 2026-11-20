@@ -40,7 +40,7 @@ export interface MetricAppearance {
     at: number;
 }
 
-/** 地域ごとに間隔を空け、世界同時の変化も同じ時間枠内に表示する。 */
+/** 地域ごとに間隔を空け、世界同時の変化も短い時間に分散して表示する。 */
 export function scheduleMetricChanges(
     changes: MetricChange[],
     reservations: MetricAppearance[],
@@ -50,7 +50,7 @@ export function scheduleMetricChanges(
 ) {
     const appearances = reservations.filter(({ at }) => at > now - spacing);
     const interval = (window - 100) / Math.max(1, changes.length);
-    return changes.flatMap((change, index) => {
+    return changes.map((change, index) => {
         let at = now + 100 + (index + 0.1 + Math.random() * 0.8) * interval;
         for (const reserved of appearances
             .filter((item) => item.area === change.area)
@@ -58,9 +58,8 @@ export function scheduleMetricChanges(
             if (reserved.at > at + spacing) break;
             if (Math.abs(reserved.at - at) < spacing) at = reserved.at + spacing;
         }
-        if (at > now + window) return [];
         appearances.push({ area: change.area, at });
-        return [{ change, at }];
+        return { change, at };
     });
 }
 
@@ -96,15 +95,18 @@ export function accumulateMetricChanges(baseline: MapMetricState[], current: Map
     return { changes, baseline: nextBaseline };
 }
 
-/** 一斉変化では全地域を先に一巡させ、一部地域の大量通知による表示枠の独占を防ぐ。 */
-export function spreadMetricChanges(changes: MetricChange[], capacity: number): MetricChange[] {
+/** 同じ指標では全地域を先に一巡させ、一部地域への偏りを防ぐ。 */
+function spreadAcrossAreas(changes: MetricChange[], capacity: number): MetricChange[] {
     const groups = new Map<number, MetricChange[]>();
     for (const change of changes) {
         const group = groups.get(change.area);
         if (group) group.push(change);
         else groups.set(change.area, [change]);
     }
-    const queues = [...groups.values()];
+    return interleaveChanges([...groups.values()], capacity);
+}
+
+function interleaveChanges(queues: MetricChange[][], capacity: number): MetricChange[] {
     const selected: MetricChange[] = [];
     for (let round = 0; selected.length < capacity; round++) {
         let found = false;
@@ -117,4 +119,16 @@ export function spreadMetricChanges(changes: MetricChange[], capacity: number): 
         if (!found) break;
     }
     return selected;
+}
+
+/** 信頼度など一つの指標が、同時に起きた別の指標の変化を埋め尽くさないよう分散する。 */
+export function spreadMetricChanges(changes: MetricChange[], capacity: number): MetricChange[] {
+    const groups = new Map<MetricChange['metric'], MetricChange[]>();
+    for (const change of changes) {
+        const group = groups.get(change.metric);
+        if (group) group.push(change);
+        else groups.set(change.metric, [change]);
+    }
+    const queues = [...groups.values()].map((group) => spreadAcrossAreas(group, capacity));
+    return interleaveChanges(queues, capacity);
 }

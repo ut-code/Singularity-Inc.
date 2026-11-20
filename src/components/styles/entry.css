@@ -51,7 +51,7 @@
     text-align: center;
 }
 .start-content h1 {
-    width: min(76vw, 1020px);
+    width: min(64vw, 860px);
     margin: 0;
     line-height: 0;
 }
@@ -646,7 +646,7 @@
         padding-top: 24dvh;
     }
     .start-content h1 {
-        width: 92vw;
+        width: 78vw;
     }
     .start-actions {
         margin-top: 44px;
@@ -707,7 +707,7 @@
         padding: 12dvh 24px 12px;
     }
     .start-content h1 {
-        width: min(76vw, 900px);
+        width: min(64vw, 760px);
     }
     .start-actions {
         margin-top: 28px;

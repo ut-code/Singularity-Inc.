@@ -38,7 +38,7 @@ export interface ChatDefinition extends EncounterBase {
 export interface EventDefinition extends EncounterBase {
     kind: 'event';
     scope: 'regional' | 'global';
-    onDeadline: EventImpact;
+    impact: EventImpact;
     choices: EventChoice[];
 }
 export type EncounterDefinition = ChatDefinition | EventDefinition;
@@ -49,7 +49,7 @@ export interface EncounterState {
     startedWeek: number;
     strength: number;
     deadline: number;
-    status: 'pending' | 'responded' | 'resolved' | 'expired';
+    status: 'pending' | 'resolved' | 'expired';
     choiceId?: string;
     result?: string;
     resolvedWeek?: number;

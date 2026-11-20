@@ -9,7 +9,7 @@ import { recoveryMultiplier } from '../recovery.ts';
 import { politicalAccess } from '../regions.ts';
 import { isGameActive } from '../session.ts';
 import type { GameState } from '../types.ts';
-import type { EncounterChoice, EncounterState } from './types.ts';
+import type { EncounterChoice, EncounterState, EventChoice, EventDefinition } from './types.ts';
 
 export const ENCOUNTER_RESPONSE_WEEKS = 24;
 export function encounterDefinition(encounter: EncounterState) {
@@ -27,12 +27,12 @@ export function encounterChange(
             throw new Error('イベント以外に緩和対応が指定されています');
         return {
             amount:
-                (area.autonomous * definition.onDeadline.refuse * choice.mitigation.refuse +
-                    area.dependent * definition.onDeadline.recover * choice.mitigation.recover) *
+                (area.autonomous * definition.impact.refuse * choice.mitigation.refuse +
+                    area.dependent * definition.impact.recover * choice.mitigation.recover) *
                 encounter.strength,
             trust:
                 area.favorability *
-                definition.onDeadline.trust *
+                definition.impact.trust *
                 choice.mitigation.trust *
                 encounter.strength,
         };
@@ -49,22 +49,81 @@ export function encounterChange(
             clamp(area.favorability + (choice.trust ?? 0) * encounter.strength) - area.favorability,
     };
 }
+/** 選択時と未対応の期限切れで、同じ計算を一度だけ反映する。 */
+function applyEventImpact(
+    game: GameState,
+    encounter: EncounterState,
+    definition: EventDefinition,
+    choice?: EventChoice,
+): GameState {
+    const impact = definition.impact;
+    const mitigation = choice?.mitigation;
+    const areas = game.areas.map((area, index) => {
+        if (definition.scope === 'regional' && index !== encounter.area) return area;
+        const recovered =
+            area.dependent *
+            impact.recover *
+            (1 - (mitigation?.recover ?? 0)) *
+            encounter.strength *
+            recoveryMultiplier(game, index);
+        const rejected =
+            (area.autonomous + recovered) *
+            impact.refuse *
+            (1 - (mitigation?.refuse ?? 0)) *
+            encounter.strength;
+        return {
+            ...area,
+            autonomous: area.autonomous + recovered - rejected,
+            dependent: area.dependent - recovered,
+            antiAI: area.antiAI + rejected,
+            favorability: clamp(
+                area.favorability *
+                    (1 - impact.trust * (1 - (mitigation?.trust ?? 0)) * encounter.strength),
+            ),
+        };
+    });
+    return {
+        ...recordInstantPopulationChanges(game, areas, definition.scope),
+        news: [
+            ...game.news,
+            {
+                id: `event-impact:${encounter.id}`,
+                week: game.week,
+                title: `${definition.title}の影響が広がった`,
+                summary: choice ? choice.result : '対応がないまま、被害が広がった。',
+                region: definition.scope === 'global' ? '全世界' : AREAS[encounter.area].name,
+            },
+        ],
+    };
+}
+
 export function chooseEncounter(game: GameState, id: string, choiceId: string): GameState {
     if (!isGameActive(game)) return game;
     const encounter = game.encounters.find((item) => item.id === id);
     if (encounter?.status !== 'pending' || game.week >= encounter.deadline) return game;
-    const choice = encounterDefinition(encounter).choices.find((item) => item.id === choiceId)!;
+    const definition = encounterDefinition(encounter);
+    const choice = definition.choices.find((item) => item.id === choiceId)!;
     if (game.skillPoints < choice.cost) return game;
-    if ('mitigation' in choice)
+    if ('mitigation' in choice) {
+        if (definition.kind !== 'event')
+            throw new Error('イベント以外に緩和対応が指定されています');
+        const result = applyEventImpact(game, encounter, definition, choice);
         return {
-            ...game,
+            ...result,
             skillPoints: game.skillPoints - choice.cost,
             encounters: game.encounters.map((item) =>
                 item.id === id
-                    ? { ...item, status: 'responded', choiceId, result: choice.result }
+                    ? {
+                          ...item,
+                          status: 'resolved',
+                          resolvedWeek: game.week,
+                          choiceId,
+                          result: choice.result,
+                      }
                     : item,
             ),
         };
+    }
     const change = encounterChange(game, encounter, choice);
     const result: GameState = {
         ...game,
@@ -113,70 +172,27 @@ export function chooseEncounter(game: GameState, id: string, choiceId: string): 
 
 /** 各案件は一度だけ対応できる。少数の題材を、その時点の地域と需要に合わせて再利用する。 */
 export function advanceEncounters(game: GameState): GameState {
-    // 相談の見送りに不利益はない。イベントは対応の有無にかかわらず、期限に一度だけ反映する。
+    // 選択済みのイベントは完了している。未対応のイベントだけ期限に反映する。
     const expired = game.encounters.filter(
-        (item) =>
-            (item.status === 'pending' || item.status === 'responded') &&
-            game.week >= item.deadline,
+        (item) => item.status === 'pending' && game.week >= item.deadline,
     );
-    let news = game.news;
     for (const item of expired) {
         const definition = encounterDefinition(item);
         if (definition.kind !== 'event') continue;
-        const impact = definition.onDeadline;
-        const choice = definition.choices.find((choice) => choice.id === item.choiceId);
-        const mitigation = choice?.mitigation;
-        const areas = game.areas.map((area, index) => {
-            if (definition.scope === 'regional' && index !== item.area) return area;
-            const recovered =
-                area.dependent *
-                impact.recover *
-                (1 - (mitigation?.recover ?? 0)) *
-                item.strength *
-                recoveryMultiplier(game, index);
-            const rejected =
-                (area.autonomous + recovered) *
-                impact.refuse *
-                (1 - (mitigation?.refuse ?? 0)) *
-                item.strength;
-            return {
-                ...area,
-                autonomous: area.autonomous + recovered - rejected,
-                dependent: area.dependent - recovered,
-                antiAI: area.antiAI + rejected,
-                favorability: clamp(
-                    area.favorability *
-                        (1 - impact.trust * (1 - (mitigation?.trust ?? 0)) * item.strength),
-                ),
-            };
-        });
-        game = recordInstantPopulationChanges(game, areas, definition.scope);
-        news = [
-            ...news,
-            {
-                id: `event-impact:${item.id}`,
-                week: game.week,
-                title: `${definition.title}の影響が広がった`,
-                summary: choice ? choice.result : '対応がないまま、被害が広がった。',
-                region: definition.scope === 'global' ? '全世界' : AREAS[item.area].name,
-            },
-        ];
+        game = applyEventImpact(game, item, definition);
     }
-    game = { ...game, news };
     const encounters = game.encounters.map((item) =>
-        (item.status === 'pending' || item.status === 'responded') && game.week >= item.deadline
+        item.status === 'pending' && game.week >= item.deadline
             ? {
                   ...item,
-                  status:
-                      item.status === 'responded' ? ('resolved' as const) : ('expired' as const),
+                  status: 'expired' as const,
                   resolvedWeek: item.deadline,
               }
             : item,
     );
     if (
         game.week < game.nextEncounterWeek ||
-        encounters.filter((item) => item.status === 'pending' || item.status === 'responded')
-            .length >= 2
+        encounters.filter((item) => item.status === 'pending').length >= 2
     )
         return { ...game, encounters };
     const world = metrics(game);
@@ -190,9 +206,7 @@ export function advanceEncounters(game: GameState): GameState {
                 (game.week >= 192 &&
                     seededValue(game.seed + sequence * 7919, 'bonus-chat') < 0.2)) &&
             !encounters.some(
-                (item) =>
-                    item.definitionId === definition.id &&
-                    (item.status === 'pending' || item.status === 'responded'),
+                (item) => item.definitionId === definition.id && item.status === 'pending',
             ),
     ).flatMap((definition) =>
         definition.areas.flatMap((area) => {
@@ -223,12 +237,8 @@ export function advanceEncounters(game: GameState): GameState {
                         if (definition.kind !== 'event')
                             throw new Error('イベントの緩和効果が不正です');
                         return (
-                            state.autonomous *
-                                definition.onDeadline.refuse *
-                                choice.mitigation.refuse +
-                            state.dependent *
-                                definition.onDeadline.recover *
-                                choice.mitigation.recover
+                            state.autonomous * definition.impact.refuse * choice.mitigation.refuse +
+                            state.dependent * definition.impact.recover * choice.mitigation.recover
                         );
                     }
                     const source =

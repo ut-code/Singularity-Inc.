@@ -26,7 +26,7 @@ export function EncounterPanel({
     const definition = encounterDefinition(encounter);
     const area = AREAS[encounter.area];
     const chat = definition.kind === 'chat';
-    const impacts = chat ? [] : EVENT_EFFECTS.filter(({ key }) => definition.onDeadline[key] > 0);
+    const impacts = chat ? [] : EVENT_EFFECTS.filter(({ key }) => definition.impact[key] > 0);
     const Icon = chat ? MessageSquare : CircleAlert;
     return (
         <IncidentPanelFrame
@@ -48,12 +48,13 @@ export function EncounterPanel({
         >
             {chat ? (
                 <EncounterConversation definition={definition} encounter={encounter} />
-            ) : (
+            ) : encounter.status === 'pending' ? (
                 <p className="investigation-question">
-                    期限切れの影響： {definition.scope === 'global' ? '世界中で' : 'この地域で'}
+                    未対応で期限を迎えると
+                    {definition.scope === 'global' ? '世界中で' : 'この地域で'}
                     {impacts.map(({ label }) => label).join('・')}が低下
                 </p>
-            )}
+            ) : null}
             {encounter.choiceId ? (
                 !chat && (
                     <div className="encounter-result">
@@ -76,9 +77,10 @@ export function EncounterPanel({
                                 className="investigation-choice"
                                 key={choice.id}
                                 disabled={game.skillPoints < choice.cost}
-                                onClick={() =>
-                                    useGameStore.getState().choose(encounter.id, choice.id)
-                                }
+                                onClick={() => {
+                                    useGameStore.getState().choose(encounter.id, choice.id);
+                                    if (!chat) onClose();
+                                }}
                             >
                                 <span className="investigation-choice-body">
                                     <span className="investigation-choice-title">

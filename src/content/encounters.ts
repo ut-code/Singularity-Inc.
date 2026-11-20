@@ -1,5 +1,5 @@
 import type { EncounterDefinition } from '../game/society/types.ts';
-// 相談は無料。イベントへの対応は、期限に生じる地域への不利益を軽減する。
+// イベントは選択時に解決し、未対応なら期限に両方の悪影響を反映する。
 export const ENCOUNTERS: EncounterDefinition[] = [
     {
         id: 'workplace-petition',
@@ -352,7 +352,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0.066,
             trust: 0.044,
             recover: 0,
@@ -386,7 +386,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0,
             trust: 0.066,
             recover: 0.04,
@@ -420,7 +420,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0,
             trust: 0.176,
             recover: 0.12,
@@ -454,7 +454,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0.22,
             trust: 0,
             recover: 0.12,
@@ -488,7 +488,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0.066,
             trust: 0.044,
             recover: 0,
@@ -522,7 +522,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0,
             trust: 0.176,
             recover: 0.15,
@@ -556,7 +556,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0.264,
             trust: 0.22,
             recover: 0,
@@ -590,7 +590,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0,
             trust: 0.044,
             recover: 0.04,
@@ -624,7 +624,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0.22,
             trust: 0,
             recover: 0.15,
@@ -658,7 +658,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         ],
         affinity: 'trust',
-        onDeadline: {
+        impact: {
             refuse: 0,
             trust: 0.22,
             recover: 0.132,
