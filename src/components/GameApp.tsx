@@ -29,7 +29,7 @@ import { SocietyPanel } from './society/SocietyPanel';
 import { useAnimationSpeed } from './useAnimationSpeed';
 import { WorldMap } from './WorldMap';
 import { WorldMetricsWidget } from './WorldMetricsWidget';
-import { WorldNews } from './WorldNews';
+/*import { WorldNews } from './WorldNews';*/
 import { percent, population } from './widgets';
 
 type Panel =
@@ -190,11 +190,11 @@ export function GameApp({
                         onToggle={() => togglePanel({ kind: 'world' })}
                         onOpenControl={() => togglePanel({ kind: 'control' })}
                     />
-                    <WorldNews
+                    {/*<WorldNews
                         key={`news:${session}`}
                         game={game}
                         speed={blocked ? 0 : game.speed}
-                    />
+                    />*/}
                     <Onboarding
                         key={`hints:${session}`}
                         skipExistingHints={debugPreset}
