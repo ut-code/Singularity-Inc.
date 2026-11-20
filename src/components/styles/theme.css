@@ -44,6 +44,12 @@
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) transparent;
 }
+*,
+*::before,
+*::after {
+    -webkit-user-select: none;
+    user-select: none;
+}
 /* スクロールバーも細い直線的な形状に揃える。 */
 @supports selector(::-webkit-scrollbar) {
     * {
@@ -75,11 +81,6 @@
 }
 body {
     margin: 0;
-    user-select: none;
-}
-input,
-textarea {
-    user-select: text;
 }
 /* 指標の良し悪しではなく、数値が上昇・低下する方向を表す共通色。 */
 [data-change="up"] {
