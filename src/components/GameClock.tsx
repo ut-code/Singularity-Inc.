@@ -1,7 +1,7 @@
 import { Pause, Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { calendarParts } from '../game/calendar';
-import { WEEK_MS } from '../game/data';
+import { GAME_SPEED_MULTIPLIER, WEEK_MS } from '../game/data';
 import { isGameActive } from '../game/session';
 import { useGameStore } from '../state/gameStore';
 import { usePresentationClock } from '../state/presentationClock';
@@ -25,7 +25,9 @@ export function GameClock({ blocked }: { blocked: boolean }) {
         const animate = () => {
             const now = performance.now();
             // タブ復帰や処理落ちの遅れを、一度に大量の週次処理として取り戻さない。
-            if (!document.hidden) elapsed.current += Math.min(now - previous, 250) * game.speed;
+            if (!document.hidden)
+                elapsed.current +=
+                    Math.min(now - previous, 250) * game.speed * GAME_SPEED_MULTIPLIER;
             previous = now;
             if (document.hidden) {
                 frame = requestAnimationFrame(animate);
@@ -72,7 +74,7 @@ export function GameClock({ blocked }: { blocked: boolean }) {
                     >
                         {game.speed === 0 ? <Play size={14} /> : <Pause size={14} />}
                     </button>
-                    {([1, 2, 4] as const).map((speed) => (
+                    {([1, 2] as const).map((speed) => (
                         <button
                             type="button"
                             key={speed}

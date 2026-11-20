@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { skillEffectiveness } from '../../game/skillEffectiveness';
 import type { TreePoint } from '../../game/skillLayout';
 import { skillStatusLabel } from '../../game/skillRuntime';
-import { skillBlockReason, skillReachable } from '../../game/skills';
+import { skillBlockReason, skillCost, skillReachable } from '../../game/skills';
 import type { GameState } from '../../game/types';
 import { SKILL_PRESENTATION } from './skillPresentation';
 import { useSkillLayoutEditor } from './useSkillLayoutEditor';
@@ -136,7 +136,7 @@ export function SkillTreeMap({
                                             {owned ? <Check size={10} aria-hidden="true" /> : null}
                                             {owned
                                                 ? skillStatusLabel(game, skill.id)
-                                                : `${skill.cost} SP`}
+                                                : `${skillCost(game, skill)} SP`}
                                         </small>
                                     </span>
                                     {locked && !owned && (

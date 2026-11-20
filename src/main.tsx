@@ -1,8 +1,8 @@
-import './components/game.css';
 import './map/rendering/tone.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GameEntry } from './components/GameEntry';
+import { StartupScreen } from './components/StartupScreen';
 import { mapScene } from './map/config';
 import { loadRegions } from './map/loadRegions';
 import { useGameStore } from './state/gameStore';
@@ -17,8 +17,10 @@ for (const [name, url] of Object.entries(mapScene)) {
     link.href = url;
     document.head.append(link);
 }
-loadRegions(mapScene.regionsUrl)
-    .then((regions) => {
+const titleLogo = new Image();
+titleLogo.src = `${import.meta.env.BASE_URL}images/title-logo.webp`;
+Promise.all([loadRegions(mapScene.regionsUrl), titleLogo.decode(), document.fonts.ready])
+    .then(([regions]) => {
         useGameStore.getState().initialize();
         root.render(
             <StrictMode>
@@ -28,8 +30,6 @@ loadRegions(mapScene.regionsUrl)
     })
     .catch((error: unknown) => {
         root.render(
-            <p role="alert" className="startup-error">
-                起動に失敗しました。{error instanceof Error ? error.message : String(error)}
-            </p>,
+            <StartupScreen error={error instanceof Error ? error.message : String(error)} />,
         );
     });

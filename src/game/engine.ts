@@ -31,10 +31,10 @@ import {
     serviceUsefulness,
     skillScale,
 } from './skillRuntime.ts';
-import { SKILLS, skillBlockReason } from './skills.ts';
+import { SKILLS, skillBlockReason, skillCost } from './skills.ts';
 import { applyConsensus, consensusPressure } from './society/consensus.ts';
 import { advanceEncounters } from './society/encounters.ts';
-import type { GameState } from './types.ts';
+import type { Difficulty, GameState } from './types.ts';
 
 export { metrics } from './metrics.ts';
 
@@ -42,9 +42,11 @@ export function createGame(
     seed = 2030,
     origin = 0,
     name = AGENT_NAMES[Math.floor(seededValue(seed, 'agent-name') * AGENT_NAMES.length)],
+    difficulty: Difficulty = 'hard',
 ): GameState {
     return {
         seed,
+        difficulty,
         name,
         origin,
         week: 0,
@@ -73,7 +75,7 @@ export function createGame(
         controlStarted: false,
         encounters: [],
         nextScandalWeek: Math.ceil(
-            ((75 + 50 * seededValue(seed, 'first-scandal')) * 1000) / WEEK_MS,
+            ((240 + 50 * seededValue(seed, 'first-scandal')) * 1000) / WEEK_MS,
         ),
         nextEncounterWeek: Math.ceil(
             ((12 + seededValue(seed, 'first-contact') * 8) * 1000) / WEEK_MS,
@@ -82,7 +84,7 @@ export function createGame(
 }
 export function startGame(state: GameState, origin: number): GameState {
     if (state.started || !ORIGINS.some((item) => item.area === origin)) return state;
-    return { ...createGame(state.seed, origin, state.name), started: true };
+    return { ...createGame(state.seed, origin, state.name, state.difficulty), started: true };
 }
 
 export function continueGame(state: GameState): GameState {
@@ -95,18 +97,13 @@ export function learnSkill(state: GameState, id: string): GameState {
     if (!isGameActive(state) || !skill || skillBlockReason(state, skill)) return state;
     const learned = {
         ...state,
-        skillPoints: state.skillPoints - skill.cost,
+        skillPoints: state.skillPoints - skillCost(state, skill),
         skills: [...state.skills, id],
         developmentProgress: {
             ...state.developmentProgress,
             [id]: skill.developmentWeeks === 0 ? 1 : 0,
         },
     };
-    if (skill.developmentAdvanceWeeks)
-        learned.developmentProgress = advanceSkillDevelopment(
-            learned,
-            skill.developmentAdvanceWeeks * skillScale(learned, id),
-        );
     return learned;
 }
 
@@ -304,7 +301,12 @@ export function advanceWeek(
     updated.peakAdoption = Math.max(previous.peakAdoption, after.adoption);
 
     // 定期支給と初回の節目達成。支給済みの報酬は再獲得できない。
-    const earned = earnedSkillPoints(updated.week, updated.peakAdoption, updated.peakDependency);
+    const earned = earnedSkillPoints(
+        updated.week,
+        updated.peakAdoption,
+        updated.peakDependency,
+        updated.difficulty,
+    );
     updated.skillPoints += Math.max(0, earned - previous.earnedPoints);
     updated.earnedPoints = Math.max(previous.earnedPoints, earned);
     if (previous.continued) return updated;
@@ -340,7 +342,6 @@ export function areaHint(state: GameState, index: number): string {
         return '教育・専門職の用途を増やすと、利用を広げやすい';
     if (area.enterprise > 0.65 && effect.enterprise < 0.8)
         return '企業向けの機能が、業務への定着につながる';
-    if (effect.dependency === 0 && effect.iqDependency === 0)
-        return '便利な道具として、利用が広がっている';
+    if (effect.dependency === 0) return '便利な道具として、利用が広がっている';
     return '暮らしや仕事が、AIを前提に変わっていく';
 }

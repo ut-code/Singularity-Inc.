@@ -42,7 +42,7 @@ export function createDebugScenario(current: GameState, targetWeek: number): Gam
     const skills = late ? LATE_SKILLS : MIDDLE_SKILLS;
     const progress: Record<string, number> = late ? { swarm: 0.5, habit: 0.65 } : { science: 0.5 };
     const game: GameState = {
-        ...createGame(current.seed, current.origin, current.name),
+        ...createGame(current.seed, current.origin, current.name, current.difficulty),
         started: true,
         week: targetWeek,
         speed: 0,
@@ -118,6 +118,11 @@ export function createDebugScenario(current: GameState, targetWeek: number): Gam
     const world = metrics(game);
     game.peakAdoption = world.adoption;
     game.peakDependency = world.dependent;
-    game.earnedPoints = earnedSkillPoints(game.week, world.adoption, world.dependent);
+    game.earnedPoints = earnedSkillPoints(
+        game.week,
+        world.adoption,
+        world.dependent,
+        game.difficulty,
+    );
     return game;
 }

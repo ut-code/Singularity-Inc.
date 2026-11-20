@@ -7,6 +7,12 @@ import { SkillText } from '../SkillText';
 import { EncounterConversation } from './EncounterConversation';
 import { IncidentPanelFrame } from './IncidentPanelFrame';
 
+const EVENT_EFFECTS = [
+    { key: 'refuse', label: '利用率' },
+    { key: 'trust', label: '信頼度' },
+    { key: 'recover', label: '依存率' },
+] as const;
+
 export function EncounterPanel({
     game,
     id,
@@ -20,13 +26,20 @@ export function EncounterPanel({
     const definition = encounterDefinition(encounter);
     const area = AREAS[encounter.area];
     const chat = definition.kind === 'chat';
+    const impacts = chat ? [] : EVENT_EFFECTS.filter(({ key }) => definition.impact[key] > 0);
     const Icon = chat ? MessageSquare : CircleAlert;
     return (
         <IncidentPanelFrame
             title={definition.title}
             showTitle={!chat}
             heading={chat ? definition.contact!.name : area.name}
-            label={chat ? `チャット · ${definition.contact!.role}` : 'イベント'}
+            label={
+                chat
+                    ? `チャット · ${definition.contact!.role}`
+                    : definition.scope === 'global'
+                      ? 'イベント · 全世界'
+                      : 'イベント · この地域'
+            }
             description={chat ? undefined : definition.summary}
             Icon={Icon}
             color={chat ? 'var(--text-secondary)' : 'var(--danger)'}
@@ -35,9 +48,13 @@ export function EncounterPanel({
         >
             {chat ? (
                 <EncounterConversation definition={definition} encounter={encounter} />
-            ) : (
-                <p className="investigation-question">期限に利用拒否が増え、信頼が低下</p>
-            )}
+            ) : encounter.status === 'pending' ? (
+                <p className="investigation-question">
+                    未対応で期限を迎えると
+                    {definition.scope === 'global' ? '世界中で' : 'この地域で'}
+                    {impacts.map(({ label }) => label).join('・')}が低下
+                </p>
+            ) : null}
             {encounter.choiceId ? (
                 !chat && (
                     <div className="encounter-result">
@@ -60,9 +77,10 @@ export function EncounterPanel({
                                 className="investigation-choice"
                                 key={choice.id}
                                 disabled={game.skillPoints < choice.cost}
-                                onClick={() =>
-                                    useGameStore.getState().choose(encounter.id, choice.id)
-                                }
+                                onClick={() => {
+                                    useGameStore.getState().choose(encounter.id, choice.id);
+                                    if (!chat) onClose();
+                                }}
                             >
                                 <span className="investigation-choice-body">
                                     <span className="investigation-choice-title">
@@ -70,28 +88,11 @@ export function EncounterPanel({
                                     </span>
                                     <span className="investigation-choice-effects">
                                         {'mitigation' in choice ? (
-                                            <>
-                                                <span>
-                                                    利用拒否の増加を
-                                                    {Math.round(choice.mitigation.refuse * 100)}
-                                                    %軽減
-                                                </span>
-                                                <span>
-                                                    信頼低下を
-                                                    {Math.round(choice.mitigation.trust * 100)}%軽減
-                                                </span>
-                                                {!chat &&
-                                                    definition.onDeadline.recover > 0 &&
-                                                    choice.mitigation.recover > 0 && (
-                                                        <span>
-                                                            依存からの回復を
-                                                            {Math.round(
-                                                                choice.mitigation.recover * 100,
-                                                            )}
-                                                            %軽減
-                                                        </span>
-                                                    )}
-                                            </>
+                                            [...impacts]
+                                                .filter(({ key }) => choice.mitigation[key] === 1)
+                                                .map(({ key, label }) => (
+                                                    <span key={key}>{label}の低下を無効化</span>
+                                                ))
                                         ) : (
                                             <>
                                                 {choice.rewardSP

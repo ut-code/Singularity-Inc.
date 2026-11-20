@@ -5,6 +5,7 @@ import {
     hasDependencyEffect,
     SKILLS,
     skillBlockReason,
+    skillCost,
     skillReachable,
     skillRestraint,
 } from '../../game/skills';
@@ -26,6 +27,7 @@ export function SkillDetails({
     const owned = game.skills.includes(skill.id);
     const locked = !skillReachable(game, skill);
     const reason = skillBlockReason(game, skill);
+    const cost = skillCost(game, skill);
     const { benefits, drawbacks } = skillEffectDescriptions(skill);
     const effectiveness = skillEffectiveness(game)[skill.id];
     const restraints = SKILLS.filter(
@@ -64,7 +66,7 @@ export function SkillDetails({
                 <p>
                     <SkillText>{skill.description}</SkillText>
                 </p>
-                <section className="skill-effect-list" aria-label="スキルの効果">
+                <section className="skill-effect-list effect-list" aria-label="スキルの効果">
                     <h3>効果</h3>
                     <ul aria-label="メリット">
                         {benefits.map((benefit) => (
@@ -106,7 +108,7 @@ export function SkillDetails({
                 <div className="skill-detail-cost">
                     <span>コスト</span>
                     <strong>
-                        {skill.cost}
+                        {cost}
                         <small>SP</small>
                     </strong>
                 </div>
@@ -133,7 +135,7 @@ export function SkillDetails({
                         <span>{reason}</span>
                     </>
                 ) : (
-                    (reason ?? `開発する · ${skill.cost} SP`)
+                    (reason ?? `開発する · ${cost} SP`)
                 )}
             </button>
         </aside>

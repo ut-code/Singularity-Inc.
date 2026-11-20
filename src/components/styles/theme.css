@@ -1,4 +1,4 @@
-/* 全画面共通。配色・書体・角丸を変更するときはここを編集する。 */
+/* 全画面の配色・書体・形状・操作状態は、この共通テーマで揃える。 */
 :root {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Yu Gothic UI", "Meiryo", sans-serif;
     color: var(--text);
@@ -24,11 +24,16 @@
     --surface-control: #ffffff05;
     --surface-hover: #ffffff18;
     --surface-selected: #8abfc224;
+    --action-fill: var(--surface-selected);
+    --action-hover: var(--surface-hover);
+    --action-text: var(--text);
     --line: #b3c6d324;
     --line-strong: #ffffff40;
     --line-selected: #8abfc255;
     --radius-panel: 7px;
     --radius-control: 5px;
+    --panel-padding: 24px;
+    --heading-size: 22px;
     --shadow-panel: 0 5px 24px #0003;
     --blur-panel: 12px;
     --scrollbar-thumb: #536775;
@@ -39,7 +44,13 @@
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) transparent;
 }
-/* Chromium / Safariでは、透明な軌道と細い丸角のつまみに統一する。 */
+*,
+*::before,
+*::after {
+    -webkit-user-select: none;
+    user-select: none;
+}
+/* スクロールバーも細い直線的な形状に揃える。 */
 @supports selector(::-webkit-scrollbar) {
     * {
         scrollbar-width: auto;
@@ -57,7 +68,7 @@
         min-height: 32px;
         min-width: 32px;
         border: 2px solid transparent;
-        border-radius: 8px;
+        border-radius: var(--radius-control);
         background: var(--scrollbar-thumb);
         background-clip: padding-box;
     }
@@ -70,11 +81,6 @@
 }
 body {
     margin: 0;
-    user-select: none;
-}
-input,
-textarea {
-    user-select: text;
 }
 /* 指標の良し悪しではなく、数値が上昇・低下する方向を表す共通色。 */
 [data-change="up"] {
@@ -90,9 +96,11 @@ button {
     background: var(--surface-control);
     border: 1px solid var(--line);
     border-radius: var(--radius-control);
+    line-height: 1.4;
     transition:
-        background 0.09s,
-        border-color 0.09s;
+        background 120ms,
+        border-color 120ms,
+        color 120ms;
 }
 button:hover:not(:disabled) {
     background: var(--surface-hover);
@@ -127,13 +135,28 @@ button[aria-pressed="true"] {
     background: transparent;
     flex-shrink: 0;
 }
-.primary {
+.primary,
+.title-start {
     min-height: 44px;
-    padding: 10px 14px;
-    font-size: 12px;
-    background: var(--surface-selected);
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--action-fill);
     border-color: var(--line-selected);
-    color: var(--text);
+    color: var(--action-text);
+}
+:is(.primary, .title-start):hover:not(:disabled) {
+    background: var(--action-hover);
+    border-color: var(--line-strong);
+}
+.title-guide {
+    min-height: 44px;
+    padding: 10px 16px;
+    border-color: var(--line-strong);
+    color: var(--text-secondary);
+    background: var(--surface-control);
+    font-size: 13px;
+    font-weight: 400;
 }
 .eyebrow {
     display: block;
@@ -156,4 +179,17 @@ button[aria-pressed="true"] {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     color: var(--muted);
+}
+/* スキル効果と難易度の差分を、同じ薄文字のリストで示す。 */
+.effect-list {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+.effect-list ul {
+    margin: 0;
+    padding-left: 16px;
+    list-style: disc;
+}
+.effect-list li {
+    padding: 4px 0;
 }

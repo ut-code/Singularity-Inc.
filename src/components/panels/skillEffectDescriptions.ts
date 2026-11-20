@@ -55,25 +55,33 @@ export function skillEffectDescriptions(skill: Skill) {
             `通常利用者の依存化（${strength(effect.dependency, 0.3, 0.6, 1)}）`,
             DEPENDENCY_CONDITIONS[skill.domain!],
         );
-    if (effect.iqDependency)
+    if (effect.delegationSupport)
         add(
-            '完成したIQスキル数に比例して、通常利用者の依存化を促進',
-            DEPENDENCY_CONDITIONS[skill.domain!],
+            `他のスキルによる通常利用者の依存化を${Math.round(effect.delegationSupport * 100)}%強化`,
         );
-    if (effect.researchInsight) add(`研究の公表ごとに +${effect.researchInsight} SP`);
+    if (effect.researchInsight) add(`研究の公表ごとに+${effect.researchInsight}SP`);
     if (effect.researchAdaptation)
         add(
             `研究による他のスキルの効果低下を${Math.round(effect.researchAdaptation * 100)}%軽減`,
             '自分で取得した制限は対象外',
         );
-    if (skill.developmentAdvanceWeeks)
-        add(`取得時、開発中の全スキルを${skill.developmentAdvanceWeeks}週分進める`);
+    if (effect.developmentSpeed)
+        add(`全スキルの開発速度+${Math.round(effect.developmentSpeed * 100)}%`);
+    if (skill.developmentDiscount)
+        add(
+            `開発完了後、元の費用が${skill.developmentDiscount.minimumCost}SP以上のスキルの費用を${skill.developmentDiscount.amount}SP軽減`,
+        );
     if (effect.researchDelay)
         add(
-            '通常研究の開始を遅延',
-            `新たに条件を満たしてから候補になるまで平均${effect.researchDelay}週待機。AI制御研究は対象外`,
+            `通常研究の開始を平均${effect.researchDelay}週遅延`,
+            `AI制御研究は対象外`,
         );
     if (effect.resilience) add(`依存からの回復を抑制（${strength(effect.resilience)}）`);
+    if (effect.workContinuity)
+        add(
+            `業務のAI依存を維持（${strength(effect.workContinuity)}）`,
+            '稼働中の業務が委任に占める割合に応じて、依存からの回復を抑える',
+        );
     if (skill.dependencyLock) {
         add(
             `利用拒否者の${Number((skill.dependencyLock.refusalConversion * 100).toFixed(2))}%を毎週AI依存へ移す`,

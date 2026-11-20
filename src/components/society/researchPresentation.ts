@@ -4,11 +4,11 @@ import type { ResearchProject } from '../../game/research/types';
 
 export function researchPresentation(project: ResearchProject) {
     const topic = researchTopic(project);
-    const color = topic.severity === 'high' ? 'var(--danger)' : 'var(--warning)';
+    const revealsIntent = topic.id === 'intent-decoding';
     return {
         Icon: FlaskConical,
-        label: topic.severity === 'high' ? '重要研究' : '研究',
-        color,
-        severity: topic.severity,
+        label: revealsIntent ? '重要研究' : '研究',
+        color: revealsIntent ? 'var(--danger)' : 'var(--warning)',
+        severity: revealsIntent ? 'high' : 'normal',
     };
 }

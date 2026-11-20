@@ -6,7 +6,9 @@ import type { Point } from '../map/geometry';
 import {
     accumulateMetricChanges,
     METRIC_CHANGE_DURATION,
+    type MetricAppearance,
     type MetricChange,
+    scheduleMetricChanges,
     spreadMetricChanges,
 } from '../map/metricChanges';
 import { randomRegionPoint } from '../map/randomRegionPoint';
@@ -28,7 +30,7 @@ const MAX_POPUPS = 128;
 const POPUP_SPACING = 90;
 const SCHEDULE_WINDOW = WEEK_MS * ANIMATION_SPEED;
 const METRIC_COLORS = {
-    autonomous: STAGE_COLORS[1],
+    adoption: STAGE_COLORS[1],
     dependent: STAGE_COLORS[2],
     antiAI: STAGE_COLORS[3],
 };
@@ -54,17 +56,20 @@ export function MapMetricChanges({
     const areaStates = useMemo(
         () =>
             states.map((state, area) => ({
-                autonomous: populationChanges?.[area]?.autonomous ?? 0,
+                // 通常利用から依存への移行では、利用者の合計は減らない。
+                adoption:
+                    (populationChanges?.[area]?.autonomous ?? 0) +
+                    (populationChanges?.[area]?.dependent ?? 0),
                 dependent: populationChanges?.[area]?.dependent ?? 0,
                 antiAI: populationChanges?.[area]?.antiAI ?? 0,
                 favorability: state.favorability,
             })),
         [states, populationChanges],
     );
-    const previous = useRef({ areaStates, tick, serverArea });
+    const previous = useRef({ areaStates, populationChanges, tick, serverArea });
     const baseline = useRef(areaStates.map((state) => ({ ...state })));
     const sequence = useRef(0);
-    const appearances = useRef<number[]>([]);
+    const appearances = useRef<MetricAppearance[]>([]);
     const elapsed = useRef(0);
     const container = useRef<HTMLDivElement>(null);
     const popupAnimations = useRef<{ animation: Animation; createdAt: number }[]>([]);
@@ -76,7 +81,7 @@ export function MapMetricChanges({
 
     useEffect(() => {
         const before = previous.current;
-        previous.current = { areaStates, tick, serverArea };
+        previous.current = { areaStates, populationChanges, tick, serverArea };
         // 新規ゲーム・巻き戻しは指標の変化として通知しない。
         if (tick < before.tick || serverArea !== before.serverArea) {
             baseline.current = areaStates.map((state) => ({ ...state }));
@@ -97,32 +102,27 @@ export function MapMetricChanges({
             const j = Math.floor(Math.random() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        const activeReservations = appearances.current.filter(
-            (start) => start > now - POPUP_SPACING,
-        );
-        const available = MAX_POPUPS - popups.filter((popup) => popup.expires > now).length;
+        const instant = populationChanges !== before.populationChanges;
+        // 即時効果は既存の通知で枠が埋まっていても表示し、古い通知から置き換える。
+        const available = instant
+            ? MAX_POPUPS
+            : MAX_POPUPS - popups.filter((popup) => popup.expires > now).length;
         const selected = spreadMetricChanges(shuffled, Math.max(0, available));
-        const interval = SCHEDULE_WINDOW / Math.max(1, selected.length);
-        const scheduled = selected.map((change, index) => ({
-            change,
-            at: now + 100 + (index + 0.1 + Math.random() * 0.8) * interval,
-        }));
-        appearances.current = activeReservations;
-        const incoming = scheduled.flatMap(({ change, at }) => {
-            // 前週から予約済みの通知の間にも差し込み、末尾へ一括で積まない。
-            let start = at;
-            for (const reserved of [...appearances.current].sort((a, b) => a - b)) {
-                if (reserved > start + POPUP_SPACING) break;
-                if (Math.abs(reserved - start) < POPUP_SPACING) start = reserved + POPUP_SPACING;
-            }
-            // 過密な演出は先送りし続けず、この時間枠で表示できる分だけ残す。
-            if (start > now + SCHEDULE_WINDOW) return [];
+        const scheduled = scheduleMetricChanges(
+            selected,
+            appearances.current,
+            now,
+            SCHEDULE_WINDOW,
+            POPUP_SPACING,
+        );
+        appearances.current = appearances.current.filter(({ at }) => at > now - POPUP_SPACING);
+        const incoming = scheduled.flatMap(({ change, at: start }) => {
             const shape = shapes.get(change.area);
             const world = shape ? randomRegionPoint(shape) : null;
             if (!world) return [];
             const delay = start - now;
             const duration = METRIC_CHANGE_DURATION * (0.8 + Math.random() * 0.5);
-            appearances.current.push(start);
+            appearances.current.push({ area: change.area, at: start });
             return [
                 {
                     ...change,
@@ -136,9 +136,13 @@ export function MapMetricChanges({
             ];
         });
         setPopups((current) => {
-            return [...current.filter((popup) => popup.expires > now), ...incoming];
+            const active = current.filter((popup) => popup.expires > now);
+            const retained = active.slice(
+                Math.max(0, active.length + incoming.length - MAX_POPUPS),
+            );
+            return [...retained, ...incoming];
         });
-    }, [areaStates, tick, serverArea, shapes, popups]);
+    }, [areaStates, populationChanges, tick, serverArea, shapes, popups]);
 
     useLayoutEffect(() => {
         // CSSの実時間と通知のゲーム内時間を揃える。速度変更・停止でも途中位置を保つ。

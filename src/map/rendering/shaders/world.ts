@@ -41,7 +41,7 @@ vec3 coverageAt(vec2 p) {
     float anti=step(antiRank,antiAmount)*step(.00001,antiAmount);
     return vec3(step(rank,amount)*step(vec2(.00001),amount),anti)*step(.5,area)*(1.-texture2D(water,p).a);
 }
-// 地図座標に固定した斜線。対策と利用拒否で間隔・太さ・縮小処理を共通にする。
+// 利用拒否の斜線を地図座標に固定し、縮小時は弱める。
 float mapHatch(vec2 p) {
     float stripe=fract((p.x*8192.+p.y*4361.)/80.);
     vec2 stripeGradient=vec2(8192./period,4361./worldHeight)/80.;
@@ -73,20 +73,15 @@ void main(){
                           min(coverageAt(p+vec2(0.,delta.y)),coverageAt(p-vec2(0.,delta.y))));
         vec3 edge=max(vec3(0.),coverage-neighbor);
         float opposition=coverage.z;
-        float blue=coverage.x*(1.-coverage.y)*(1.-opposition);
+        float normalUse=coverage.x*(1.-coverage.y)*(1.-opposition);
         float red=coverage.y*(1.-opposition);
         // 各状態を重ねる前の地形を共通の明暗源にする。
         float terrainLight=dot(c,vec3(.213,.715,.072));
         float relief=smoothstep(.03,.62,terrainLight);
         vec3 neutralTerrain=vec3(terrainLight);
-        // 通常利用の侵食色と地形を保ち、既存の青に斜線だけを重ねる。
-        vec3 blueColor=mix(vec3(.12,.34,.44),vec3(.29,.62,.72),relief);
-        c=mix(c,blueColor,blue*.38);
-        vec4 response=texture2D(palette,vec2((area+.5)/256.,.75));
-        float protection=(response.b*65280.+response.a*255.)/65535.;
-        // 単色で覆わず、侵食済みの地表の陰影・色むらを斜線の中にも残す。
-        vec3 responseInk=clamp(c*vec3(.94,1.32,1.4),0.,1.);
-        c=mix(c,responseInk,blue*mapHatch(p)*protection*.55);
+        // 通常利用は地形の陰影を保ちながら青で示す。
+        vec3 useColor=mix(vec3(.12,.34,.44),vec3(.29,.62,.72),relief);
+        c=mix(c,useColor,normalUse*.38);
         // 依存は地表の色相を抑え、地形の陰影を深紅の明暗へ移す。
         // 模様や時間変化を加えず、大きな面でも地理を読めるようにする。
         vec3 dependencyFill=mix(vec3(.31,.035,.065),vec3(.76,.16,.20),relief);
