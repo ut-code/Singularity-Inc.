@@ -794,6 +794,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
     {
         id: 'factory-skill-transfer',
         kind: 'chat',
+        bonus: true,
         title: '町工場からの相談',
         summary: 'ベテラン職人の機械調整のコツをAIに学習させ、若手教育に使いたい。',
         areas: [28, 22, 26, 6, 4, 7],
@@ -906,6 +907,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
     {
         id: 'agri-coop-pest',
         kind: 'chat',
+        bonus: true,
         title: '農協青年部からの相談',
         summary: 'スマホで撮った葉の写真から病害虫を判定するAIを組合員に広めたい。',
         areas: [28, 30],
@@ -1092,6 +1094,7 @@ export const ENCOUNTERS: EncounterDefinition[] = [
     {
         id: 'regional-bank-loan',
         kind: 'chat',
+        bonus: true,
         title: '地方銀行からの相談',
         summary: '融資審査の補助にAIを導入したが、顧客に「なぜ落ちたか」を説明できず困っている。',
         areas: [28, 29],
